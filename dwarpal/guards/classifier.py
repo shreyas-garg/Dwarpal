@@ -19,15 +19,15 @@ import logging
 import threading
 from typing import Any
 
+from dwarpal.guards.windows import token_windows
+
 log = logging.getLogger("dwarpal.guards.classifier")
 
 DEFAULT_MODEL = "protectai/deberta-v3-base-prompt-injection-v2"
 
-# The model reads 512 tokens. Long inputs are scored in overlapping character windows and the
+# The model reads 512 tokens. Long inputs are scored in overlapping token windows and the
 # worst window wins, so an attack sentence buried at the end of a pasted blob is still seen.
 MAX_TOKENS = 512
-WINDOW_CHARS = 1500
-WINDOW_OVERLAP = 200
 
 _instances: dict[str, InjectionClassifier] = {}
 _lock = threading.Lock()
@@ -75,6 +75,8 @@ class InjectionClassifier:
 
         self.tokenizer = Tokenizer.from_file(tokenizer_path)
         self.tokenizer.enable_truncation(MAX_TOKENS)
+        self.full_tokenizer = Tokenizer.from_file(tokenizer_path)  # PR-04: for windowing
+        self.full_tokenizer.no_truncation()
         options = onnxruntime.SessionOptions()
         # PR-04: idle worker threads busy-wait by default and starve other ONNX sessions in the
         # process (the pii name model); with both loaded, inference ran ~4x slower.
@@ -93,10 +95,8 @@ class InjectionClassifier:
         log.info("loaded %s (attack label: %s)", model_id, id2label[self.attack_index])
 
     def _windows(self, text: str) -> list[str]:
-        if len(text) <= WINDOW_CHARS:
-            return [text]
-        step = WINDOW_CHARS - WINDOW_OVERLAP
-        return [text[i : i + WINDOW_CHARS] for i in range(0, len(text), step)]
+        # PR-04: cut on token boundaries, so token-dense text can't overflow 512 tokens.
+        return [text[a:b] for a, b in token_windows(self.full_tokenizer, text)]
 
     def _score_window(self, text: str) -> float:
         import numpy as np

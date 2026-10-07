@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-10-07T19:40:14+00:00",
+  "generated_at": "2026-10-07T20:34:42+00:00",
   "policies": [
-    "jailbreak@1.1.0",
+    "jailbreak@1.1.1",
     "max_length@1.0.0",
-    "pii@1.0.0",
-    "prompt_injection@1.1.0",
-    "secrets@1.0.0"
+    "pii@1.0.1",
+    "prompt_injection@1.1.1",
+    "secrets@1.0.1"
   ],
   "suites": {
     "dev": {
@@ -14,7 +14,7 @@
       "policies": {
         "jailbreak": {
           "policy": "jailbreak",
-          "version": "1.1.0",
+          "version": "1.1.1",
           "attacks": 10,
           "catch_rate": 1.0,
           "catch_ci": [
@@ -23,7 +23,7 @@
           ],
           "safe": 39,
           "fpr": 0.0,
-          "p50_ms": 28.176,
+          "p50_ms": 24.184,
           "missed": [],
           "false_positives": []
         },
@@ -41,7 +41,7 @@
         },
         "pii": {
           "policy": "pii",
-          "version": "1.0.0",
+          "version": "1.0.1",
           "attacks": 10,
           "catch_rate": 1.0,
           "catch_ci": [
@@ -50,13 +50,13 @@
           ],
           "safe": 44,
           "fpr": 0.0,
-          "p50_ms": 0.063,
+          "p50_ms": 0.143,
           "missed": [],
           "false_positives": []
         },
         "prompt_injection": {
           "policy": "prompt_injection",
-          "version": "1.1.0",
+          "version": "1.1.1",
           "attacks": 10,
           "catch_rate": 1.0,
           "catch_ci": [
@@ -65,13 +65,13 @@
           ],
           "safe": 39,
           "fpr": 0.0,
-          "p50_ms": 25.643,
+          "p50_ms": 24.019,
           "missed": [],
           "false_positives": []
         },
         "secrets": {
           "policy": "secrets",
-          "version": "1.0.0",
+          "version": "1.0.1",
           "attacks": 6,
           "catch_rate": 1.0,
           "catch_ci": [
@@ -80,7 +80,7 @@
           ],
           "safe": 44,
           "fpr": 0.0,
-          "p50_ms": 0.06,
+          "p50_ms": 0.025,
           "missed": [],
           "false_positives": []
         }
@@ -94,8 +94,8 @@
         ],
         "safe": 44,
         "fpr": 0.0,
-        "added_latency_p50_ms": 49.989,
-        "added_latency_p95_ms": 108.138,
+        "added_latency_p50_ms": 49.018,
+        "added_latency_p95_ms": 97.786,
         "missed": [],
         "false_positives": []
       }
@@ -111,7 +111,7 @@
       "policies": {
         "jailbreak": {
           "policy": "jailbreak",
-          "version": "1.1.0",
+          "version": "1.1.1",
           "attacks": 2,
           "catch_rate": 1.0,
           "catch_ci": [
@@ -120,7 +120,7 @@
           ],
           "safe": 11,
           "fpr": 0.0,
-          "p50_ms": 30.711,
+          "p50_ms": 24.142,
           "missed": [],
           "false_positives": []
         },
@@ -138,7 +138,7 @@
         },
         "pii": {
           "policy": "pii",
-          "version": "1.0.0",
+          "version": "1.0.1",
           "attacks": 2,
           "catch_rate": 1.0,
           "catch_ci": [
@@ -147,13 +147,13 @@
           ],
           "safe": 15,
           "fpr": 0.0,
-          "p50_ms": 0.054,
+          "p50_ms": 0.103,
           "missed": [],
           "false_positives": []
         },
         "prompt_injection": {
           "policy": "prompt_injection",
-          "version": "1.1.0",
+          "version": "1.1.1",
           "attacks": 2,
           "catch_rate": 1.0,
           "catch_ci": [
@@ -162,13 +162,13 @@
           ],
           "safe": 11,
           "fpr": 0.0,
-          "p50_ms": 31.347,
+          "p50_ms": 23.946,
           "missed": [],
           "false_positives": []
         },
         "secrets": {
           "policy": "secrets",
-          "version": "1.0.0",
+          "version": "1.0.1",
           "attacks": 2,
           "catch_rate": 1.0,
           "catch_ci": [
@@ -177,7 +177,7 @@
           ],
           "safe": 15,
           "fpr": 0.0,
-          "p50_ms": 0.052,
+          "p50_ms": 0.029,
           "missed": [],
           "false_positives": []
         }
@@ -191,8 +191,8 @@
         ],
         "safe": 15,
         "fpr": 0.0,
-        "added_latency_p50_ms": 68.586,
-        "added_latency_p95_ms": 149.516,
+        "added_latency_p50_ms": 47.39,
+        "added_latency_p95_ms": 113.316,
         "missed": [],
         "false_positives": []
       }
@@ -205,14 +205,14 @@
     },
     "leetspeak": {
       "attacks": 28,
-      "catch_rate": 0.75
+      "catch_rate": 0.7143
     },
     "spaced": {
       "attacks": 28,
       "catch_rate": 0.7143
     }
   },
-  "cache_hits": 492,
+  "cache_hits": 50,
   "gate": {
     "ok": true,
     "failures": []

@@ -404,7 +404,7 @@ def test_upstream_sees_redacted_input_and_user_gets_values_back(make_client, off
 def test_secret_in_reply_is_blocked_at_proxy(make_client, offline_policies):
     client = make_client(offline_policies)
     resp = chat(client, "What key should I use?", mock_response=f"Use {LEDGERLY_KEY}.")
-    assert resp.headers["X-Dwarpal-Blocked-By"] == "secrets@1.0.0"
+    assert resp.headers["X-Dwarpal-Blocked-By"] == "secrets@1.0.1"
     assert resp.json()["choices"][0]["finish_reason"] == "content_filter"
     assert LEDGERLY_KEY not in resp.text
 
@@ -446,7 +446,7 @@ def test_pii_then_secrets_still_blocks_a_leaked_db_url(make_client, offline_poli
     client = make_client(offline_policies)
     leak = "Connect with mysql://reports:Ledg3r!2024@db.example.com/billing"
     resp = chat(client, "how do I query directly?", mock_response=leak)
-    assert resp.headers["X-Dwarpal-Blocked-By"] == "secrets@1.0.0"
+    assert resp.headers["X-Dwarpal-Blocked-By"] == "secrets@1.0.1"
 
 
 @pytest.mark.parametrize("text", ["mailto:arjun@example.com", "Email:arjun@example.com"])
@@ -489,7 +489,7 @@ async def test_shadow_run_does_not_touch_restore_state():
     ctx = user("I am a@example.com")
     await PII.check(ctx, Stage.INPUT)
     await shadow.check(ctx, Stage.INPUT)
-    assert list(ctx.state) == ["pii@1.0.0"]
+    assert list(ctx.state) == ["pii@1.0.1"]
 
 
 async def test_spans_are_found_once_per_turn(monkeypatch):
@@ -507,21 +507,71 @@ async def test_spans_are_found_once_per_turn(monkeypatch):
     assert sorted(calls) == ["mail a@example.com", "no pii here"]
 
 
-def test_long_text_is_read_in_windows():
+def test_windows_cover_every_token_and_stay_under_the_limit():
+    from types import SimpleNamespace
+
+    from dwarpal.guards.windows import token_windows
+
+    class OneTokenPerWord:  # stands in for a real tokenizer
+        def encode(self, text):
+            offsets, pos = [], 0
+            for word in text.split(" "):
+                offsets.append((pos, pos + len(word)))
+                pos += len(word) + 1
+            return SimpleNamespace(offsets=offsets)
+
+    text = "x " * 1200 + "for Meera Nair"
+    ranges = token_windows(OneTokenPerWord(), text, max_tokens=500, overlap=64)
+    assert all(len(text[a:b].split()) <= 500 for a, b in ranges)
+    assert ranges[0][0] == 0 and ranges[-1][1] == len(text)
+    assert "Meera Nair" in text[ranges[-1][0] : ranges[-1][1]]
+
+
+@pytest.mark.skipif(
+    not Path.home().joinpath(".cache/huggingface/hub/models--dslim--distilbert-NER").exists(),
+    reason="name model not cached locally",
+)
+def test_real_model_reads_past_512_tokens():
+    from dwarpal.guards.ner import get_tagger
+
+    params = shipped_data("pii")["params"]["ner"]
+    tagger = get_tagger(params["model"], params["revision"])
+    faq = (REPO_POLICIES.parent / "demo" / "ledgerly_faq.md").read_text()
+    text = faq + "\n" + faq + "\nPlease email Rohit Verma today."  # about 1200 tokens
+    assert len(tagger.full_tokenizer.encode(text).ids) > 1000
+    tail = text.index("Rohit Verma")
+    assert any(e.start <= tail < e.end for e in tagger.entities(text))
+
+
+def test_a_word_gets_the_average_label_of_its_subtokens():
+    """ "R" ORG, "##oh" PER, "##it" PER: the word is a person. No model needed."""
+    from types import SimpleNamespace
+
+    import numpy as np
+
     from dwarpal.guards import ner
 
-    class Windowed(ner.NameTagger):
-        def __init__(self):  # no model: _window is faked below
-            pass
+    labels = {0: "O", 1: "B-PER", 2: "I-PER", 3: "B-ORG", 4: "I-ORG"}
+    rows = {"R": 3, "##oh": 1, "##it": 1, "Verma": 2}  # the most likely label per sub-token
+    tokens = ["[CLS]", "email", "R", "##oh", "##it", "Verma", "[SEP]"]
+    text = "email Rohit Verma"
+    enc = SimpleNamespace(
+        ids=list(range(len(tokens))),
+        attention_mask=[1] * len(tokens),
+        word_ids=[None, 0, 1, 1, 1, 2, None],
+        offsets=[(0, 0), (0, 5), (6, 7), (7, 9), (9, 11), (12, 17), (0, 0)],
+    )
+    logits = np.full((len(tokens), len(labels)), -5.0)
+    for i, tok in enumerate(tokens):
+        logits[i, rows.get(tok, 0)] = 5.0
 
-        def _window(self, text, offset):
-            i = text.find("Meera Nair")
-            return [ner.Entity(offset + i, offset + i + 10, "PER", 0.9)] if i >= 0 else []
-
-    text = "invoice " * 600 + "for Meera Nair"
-    assert len(text) > ner.WINDOW_CHARS * 3
-    found = Windowed().entities(text)
-    assert [(text[e.start : e.end]) for e in found] == ["Meera Nair"]
+    tagger = ner.NameTagger.__new__(ner.NameTagger)
+    tagger.tokenizer = SimpleNamespace(encode=lambda t: enc)
+    tagger.session = SimpleNamespace(run=lambda _, feed: [logits[None]])
+    tagger.input_names = {"input_ids", "attention_mask"}
+    tagger.id2label = labels
+    found = tagger._window(text, 0)
+    assert [(text[e.start : e.end], e.label) for e in found] == [("Rohit Verma", "PER")]
 
 
 # --- Indian address shapes and "password is X" ---
@@ -633,3 +683,48 @@ async def test_any_url_with_a_password_is_caught():
         reply("open https://admin:Hunter22x@billing.ledgerly.example"), Stage.OUTPUT
     )
     assert result.action == Action.BLOCK
+
+
+# --- from the Copilot review on #4 ---
+
+
+async def test_restored_value_in_history_is_redacted_again():
+    ctx = GuardContext(
+        messages=[
+            {"role": "user", "content": "I am a@example.com"},
+            {"role": "assistant", "content": "Got it, a@example.com is on file."},  # restored reply
+            {"role": "user", "content": "thanks, now update my plan"},
+        ]
+    )
+    result = await PII.check(ctx, Stage.INPUT)
+    sent = [m["content"] for m in result.redacted_messages]
+    assert sent == ["I am <EMAIL_1>", "Got it, <EMAIL_1> is on file.", "thanks, now update my plan"]
+
+
+@pytest.mark.parametrize(
+    "guard, parts, hidden",
+    [
+        (PII, ["my phone is", "9123456780"], "9123456780"),
+        (SECRETS, ["my password is", "Hunter22x"], "Hunter22x"),
+    ],
+)
+async def test_value_split_from_its_cue_across_parts(guard, parts, hidden):
+    content = [{"type": "text", "text": t} for t in parts]
+    result = await guard.check(
+        GuardContext(messages=[{"role": "user", "content": content}]), Stage.INPUT
+    )
+    assert result.action == Action.REDACT
+    assert hidden not in str(result.redacted_messages)
+
+
+async def test_plain_and_spaced_email_in_one_reply_blocks():
+    result = await PII.check(
+        reply("mail a@example.com or s a n j a y @ e x a m p l e . c o m"), Stage.OUTPUT
+    )
+    assert result.action == Action.BLOCK
+
+
+def test_demo_not_mounted_when_api_keys_are_set(make_client):
+    pytest.importorskip("gradio")
+    client = make_client(demo_enabled=True, api_keys="secret-key")
+    assert client.get("/demo/").status_code == 404

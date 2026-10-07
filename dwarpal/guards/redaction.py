@@ -6,7 +6,6 @@ the model can still follow the sentence.
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -54,28 +53,42 @@ class Redactor:
         return "".join(out)
 
 
-def redact_user_messages(
-    messages: list[dict[str, Any]],
-    find: Callable[[str], list[Span]],
-    redactor: Redactor,
-) -> list[dict[str, Any]]:
-    """Copy of messages with user turns redacted. System and assistant turns are left alone."""
-    out = []
-    for message in messages:
-        content = message.get("content")
-        if message.get("role") != "user" or content is None:
-            out.append(message)
-        elif isinstance(content, str):
-            out.append({**message, "content": redactor.apply(content, find(content))})
-        else:
-            parts = [
-                {**p, "text": redactor.apply(p.get("text", ""), find(p.get("text", "")))}
-                if isinstance(p, dict) and p.get("type") == "text"
-                else p
-                for p in content
-            ]
-            out.append({**message, "content": parts})
-    return out
+def redact_message(
+    message: dict[str, Any], spans: list[Span], redactor: Redactor
+) -> dict[str, Any]:
+    """Apply spans found on message_text(message) back onto its content.
+
+    Content parts are joined with "\n" for detection, so a value split across parts ("my phone
+    is" / "9123456780") is still one span. Each piece of it is removed; the placeholder goes
+    where the value starts.
+    """
+    content = message.get("content")
+    if not spans or content is None:
+        return message
+    if isinstance(content, str):
+        return {**message, "content": redactor.apply(content, spans)}
+
+    spans = resolve_overlaps(spans)
+    out, offset = [], 0
+    for part in content:
+        if not (isinstance(part, dict) and part.get("type") == "text"):
+            out.append(part)
+            continue
+        text = part.get("text", "")
+        start, end = offset, offset + len(text)
+        pieces, cursor = [], 0
+        for span in spans:
+            if span.end <= start or span.start >= end:
+                continue
+            a, b = max(span.start, start) - start, min(span.end, end) - start
+            pieces.append(text[cursor:a])
+            if span.start >= start:  # the value begins in this part
+                pieces.append(redactor.placeholder(span.entity, span.value))
+            cursor = b
+        pieces.append(text[cursor:])
+        out.append({**part, "text": "".join(pieces)})
+        offset = end + 1  # the "\n" message_text puts between parts
+    return {**message, "content": out}
 
 
 def summarize(spans: list[Span]) -> str:

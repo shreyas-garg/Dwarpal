@@ -19,7 +19,7 @@ from dataclasses import dataclass
 
 from dwarpal.guards.base import Action, Guard, GuardContext, GuardResult, Stage, message_text
 from dwarpal.guards.normalize import normalize
-from dwarpal.guards.redaction import Redactor, Span, redact_user_messages
+from dwarpal.guards.redaction import Redactor, Span, redact_message
 from dwarpal.guards.registry import register
 
 _TOKEN = re.compile(r"(?<![\w+/=\-])[A-Za-z0-9+/_\-]{16,}={0,2}(?![\w+/=\-])")
@@ -60,15 +60,6 @@ _HEX = re.compile(r"^[0-9a-fA-F]+$")
 _KEYWORD = re.compile(r"(?i)\b(?:api[ _\-]?key|secret|token|passw(?:or)?d|pwd|credential)s?\b")
 # Values that look like secrets but are templates or examples (gitleaks calls these stopwords).
 _DEFAULT_STOPWORDS = ["your", "xxxx", "changeme", "placeholder", "dummy", "redacted", "${", "{{"]
-
-
-def _parts(message: dict) -> list[str]:
-    content = message.get("content")
-    if isinstance(content, str):
-        return [content]
-    return [
-        p.get("text", "") for p in content or [] if isinstance(p, dict) and p.get("type") == "text"
-    ]
 
 
 @register("secrets")
@@ -147,7 +138,8 @@ class SecretsGuard(Guard):
                 texts.append(plain)
         else:
             # Each user turn is scored on its own, all its content parts together.
-            texts = [message_text(m) for m in ctx.user_messages()]
+            turns = [(i, m) for i, m in enumerate(ctx.messages) if m.get("role") == "user"]
+            texts = [message_text(m) for _, m in turns]
         scans = [self.scan(t) for t in texts]
         score = max((s for s, _, _ in scans), default=0.0)
         fired = sorted({name for _, names, _ in scans for name in names})
@@ -162,15 +154,10 @@ class SecretsGuard(Guard):
         if stage == Stage.OUTPUT:
             redacted = redactor.apply(texts[0], scans[0][2])
             return self.result(action, score, reason, redacted_text=redacted)
-        # In a turn that crossed the threshold, redact every candidate in each of its parts,
-        # so a keyword in one part and the key in the next can't slip through.
-        hot = {
-            part
-            for m, (s, _, _) in zip(ctx.user_messages(), scans, strict=True)
-            if s >= self.policy.threshold
-            for part in _parts(m)
-        }
-        messages = redact_user_messages(
-            ctx.messages, lambda t: self.scan(t)[2] if t in hot else [], redactor
-        )
+        # Spans come from the whole turn, so a keyword in one content part and the key in the
+        # next are still one match.
+        messages = list(ctx.messages)
+        for (i, m), (s, _, spans) in zip(turns, scans, strict=True):
+            if s >= self.policy.threshold:
+                messages[i] = redact_message(m, spans, redactor)
         return self.result(action, score, reason, redacted_messages=messages)

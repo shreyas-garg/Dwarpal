@@ -15,10 +15,10 @@ import threading
 from dataclasses import dataclass
 from pathlib import Path
 
+from dwarpal.guards.windows import token_windows
+
 DEFAULT_MODEL = "dslim/distilbert-NER"
 MAX_TOKENS = 512
-WINDOW_CHARS = 1500  # comfortably under 512 tokens of English
-WINDOW_OVERLAP = 200
 
 _instances: dict[str, NameTagger] = {}
 _lock = threading.Lock()
@@ -58,6 +58,8 @@ class NameTagger:
 
         self.tokenizer = Tokenizer.from_file(fetch("tokenizer.json"))
         self.tokenizer.enable_truncation(MAX_TOKENS)
+        self.full_tokenizer = Tokenizer.from_file(fetch("tokenizer.json"))  # for windowing
+        self.full_tokenizer.no_truncation()
         options = onnxruntime.SessionOptions()
         # Idle worker threads busy-wait by default and starve the other ONNX sessions in this
         # process (the PR-03 classifier): ~160 ms vs ~40 ms measured with both models loaded.
@@ -72,14 +74,15 @@ class NameTagger:
     def entities(self, text: str) -> list[Entity]:
         """BIO tags merged into character spans. CPU-bound: call via asyncio.to_thread.
 
-        The model reads 512 tokens, so long text goes in overlapping windows (like
-        classifier.py) and an entity seen twice in an overlap is kept once.
+        The model reads 512 tokens, so long text goes in overlapping token windows and an
+        entity seen twice in an overlap is kept once.
         """
-        if len(text) <= WINDOW_CHARS:
+        ranges = token_windows(self.full_tokenizer, text)
+        if len(ranges) == 1:
             return self._window(text, 0)
         seen: dict[tuple[int, int], Entity] = {}
-        for offset in range(0, len(text), WINDOW_CHARS - WINDOW_OVERLAP):
-            for ent in self._window(text[offset : offset + WINDOW_CHARS], offset):
+        for start, end in ranges:
+            for ent in self._window(text[start:end], start):
                 seen.setdefault((ent.start, ent.end), ent)
         return sorted(seen.values(), key=lambda e: e.start)
 
@@ -99,31 +102,28 @@ class NameTagger:
         probs = np.exp(logits - logits.max(axis=-1, keepdims=True))
         probs /= probs.sum(axis=-1, keepdims=True)
 
+        # One label per word: average the probabilities of its sub-tokens ("R", "##oh", "##it"),
+        # like the "average" aggregation in Hugging Face pipelines. Taking only the first
+        # sub-token's label turned "Rohit" into an organisation.
+        words: dict[int, tuple[int, int, list[int]]] = {}  # word id -> start, end, token rows
+        for row, (word, (start, end)) in enumerate(zip(enc.word_ids, enc.offsets, strict=True)):
+            if word is None or start == end:  # special tokens
+                continue
+            first, _, rows = words.get(word, (start, end, []))
+            words[word] = (first, end, rows + [row])
+
         out: list[Entity] = []
-        current: tuple[str, int, int, list[float]] | None = None  # label, start, end, scores
-        for i, (start, end) in enumerate(enc.offsets):
-            if start == end:  # [CLS], [SEP], padding
+        for start, end, rows in words.values():
+            avg = probs[rows].mean(axis=0)
+            tag = self.id2label[int(avg.argmax())]
+            if tag == "O":
                 continue
-            tag = self.id2label[int(probs[i].argmax())]
-            prob = float(probs[i].max())
-            subword = (
-                enc.word_ids[i] is not None and i > 0 and enc.word_ids[i] == enc.word_ids[i - 1]
-            )
-            label = tag[2:] if tag != "O" else None
-            if current and (subword or (label == current[0] and tag.startswith("I-"))):
-                current = (current[0], current[1], end, current[3] + [prob])
-                continue
-            if current:
-                out.append(
-                    Entity(current[1], current[2], current[0], sum(current[3]) / len(current[3]))
-                )
-                current = None
-            if label:
-                current = (label, start, end, [prob])
-        if current:
-            out.append(
-                Entity(current[1], current[2], current[0], sum(current[3]) / len(current[3]))
-            )
+            label, score = tag[2:], float(avg.max())
+            prev = out[-1] if out else None
+            if prev and tag.startswith("I-") and prev.label == label:
+                out[-1] = Entity(prev.start, end, label, (prev.score + score) / 2)
+            else:
+                out.append(Entity(start, end, label, score))
         merged = _merge_adjacent(text, out)
         return [Entity(e.start + offset, e.end + offset, e.label, e.score) for e in merged]
 

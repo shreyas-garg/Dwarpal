@@ -1,9 +1,9 @@
 {
   "note": "Dev-set numbers on main. The eval gate fails any PR that scores below these.",
-  "updated": "2026-10-07T19:27:58+00:00",
+  "updated": "2026-10-07T20:34:42+00:00",
   "policies": {
     "jailbreak": {
-      "version": "1.1.0",
+      "version": "1.1.1",
       "catch_rate": 1.0,
       "fpr": 0.0
     },
@@ -13,17 +13,17 @@
       "fpr": 0.0
     },
     "pii": {
-      "version": "1.0.0",
+      "version": "1.0.1",
       "catch_rate": 1.0,
       "fpr": 0.0
     },
     "prompt_injection": {
-      "version": "1.1.0",
+      "version": "1.1.1",
       "catch_rate": 1.0,
       "fpr": 0.0
     },
     "secrets": {
-      "version": "1.0.0",
+      "version": "1.0.1",
       "catch_rate": 1.0,
       "fpr": 0.0
     }

@@ -2,7 +2,7 @@
 # give the user their own values back in the reply. GSTIN and IFSC are not treated as PII
 # (public business ids). See docs/decisions/0004.
 name: pii
-version: 1.0.0
+version: 1.0.1
 guard: pii
 stages: [input, output]
 enabled: true
@@ -28,3 +28,4 @@ params:
     never_names: [ledgerly, aadhaar]
 changelog:
   - "1.0.0: EMAIL, UPI, PHONE, PAN, AADHAAR, CARD, IBAN by regex + checksum; BANK_ACCOUNT, DOB, PASSPORT, VOTER_ID only next to a cue word; ADDRESS; NAME by distilbert-NER; redact, block on Aadhaar, restore the user's own values in the reply"
+  - "1.0.1: redact assistant history too, values split across content parts, plain + spaced data in one reply; names labelled per word, token windows"
