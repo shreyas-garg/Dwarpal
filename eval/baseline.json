@@ -1,0 +1,11 @@
+{
+  "note": "Dev-set numbers on main. The eval gate fails any PR that scores below these.",
+  "updated": "2026-10-07T12:14:38+00:00",
+  "policies": {
+    "max_length": {
+      "version": "1.0.0",
+      "catch_rate": null,
+      "fpr": 0.0
+    }
+  }
+}

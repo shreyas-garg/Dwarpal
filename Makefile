@@ -25,9 +25,9 @@ format:
 test:
 	uv run pytest
 
-# Filled in by PR-02 (eval harness).
+# Score the red-team sets; exits non-zero when a policy regresses. See eval/README.md.
 eval:
-	@echo "eval harness arrives in PR-02"
+	uv run python -m eval.harness
 
 # Filled in by PR-07 (load test + benchmarks).
 bench:

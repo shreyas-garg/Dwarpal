@@ -1,0 +1,13 @@
+# Floors every policy must clear on the dev set, on top of the no-regression rule in
+# eval/baseline.json. Starting floor is deliberately loose; the project target is 0.90 / 0.05.
+# Guard owners: add an override here only with a reason in your docs/decisions/ note.
+
+target:
+  min_catch_rate: 0.90
+  max_fpr: 0.05
+
+defaults:
+  min_catch_rate: 0.70
+  max_fpr: 0.10
+
+policies: {}

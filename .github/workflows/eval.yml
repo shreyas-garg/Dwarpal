@@ -1,0 +1,47 @@
+name: eval
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install
+        run: uv sync --all-extras --frozen
+
+      # Decisions are keyed by (guard, policy version, case), so unchanged guards are scored
+      # once and the LLM judge (PR-06) is not paid for again on every push.
+      - name: Restore eval cache
+        uses: actions/cache@v4
+        with:
+          path: eval/.cache
+          key: eval-${{ hashFiles('policies/*.yaml', 'dwarpal/guards/*.py', 'eval/datasets/*.jsonl') }}
+          restore-keys: eval-
+
+      # Exits non-zero when a policy drops below its baseline or its threshold. The report is
+      # written either way, so the table below explains a red build.
+      - name: Eval
+        run: make eval
+
+      - name: Job summary
+        if: always()
+        run: cat eval/reports/latest.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment on the PR
+        if: always() && github.event_name == 'pull_request'
+        continue-on-error: true  # pull requests from forks get a read-only token
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: gh pr comment "$PR" --body-file eval/reports/latest.md --edit-last --create-if-none
