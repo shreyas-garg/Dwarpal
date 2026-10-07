@@ -93,10 +93,13 @@ def test_repo_datasets_load():
     suites = load_suites()
     dev, holdout = suites["dev"], suites["holdout"]
 
-    assert len(dev.safe) == 18 and not dev.attacks
+    # PR-02 shipped 18 safe cases; PR-03 added 8 hard negatives and 20 input attacks.
+    assert len(dev.safe) == 26
+    assert len(dev.attacks) == 20
+    assert {c.target_guard for c in dev.attacks} == {"prompt_injection", "jailbreak"}
     assert len(holdout.safe) == 15
     assert sum(holdout.skipped.values()) + len(holdout.attacks) == 16
-    assert {c.author for c in dev.cases} == {"harshit-sachan"}
+    assert {c.author for c in dev.cases} == {"harshit-sachan", "harshit-goel"}
 
 
 async def test_score_policy_separates_catch_rate_from_false_positives(cache):

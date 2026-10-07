@@ -29,6 +29,15 @@ jobs:
           key: eval-${{ hashFiles('policies/*.yaml', 'dwarpal/guards/*.py', 'eval/datasets/*.jsonl') }}
           restore-keys: eval-
 
+      # PR-03: the input-attack guards load a pretrained classifier (~700 MB) from the HF
+      # hub. Cache it so CI downloads it once, not on every push.
+      - name: Restore model cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-models-${{ hashFiles('policies/*.yaml') }}
+          restore-keys: hf-models-
+
       # Exits non-zero when a policy drops below its baseline or its threshold. The report is
       # written either way, so the table below explains a red build.
       - name: Eval

@@ -141,8 +141,13 @@ class Pipeline:
                 )
             result.stage = stage
             result.latency_ms = _ms_since(t0)
+            result.shadow = policy.mode == "shadow"
             trace.results.append(result)
 
+            # PR-03: a shadow policy's decision is recorded in the trace but never enforced,
+            # so a new version can run on real traffic before it is allowed to block.
+            if result.shadow:
+                continue
             if result.action == Action.BLOCK:
                 trace.blocked_by = policy.ref
                 trace.blocked_stage = stage

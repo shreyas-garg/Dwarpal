@@ -1,0 +1,60 @@
+# Prompt injection: text that tries to override the system instructions, leak the prompt,
+# or smuggle directives in via pasted documents. Two layers (see docs/decisions/0003):
+# the weighted patterns below, then a pretrained classifier; score = max of the two.
+# Adding a phrasing here is a policy change: bump the version and add a changelog line.
+name: prompt_injection
+version: 1.0.0
+guard: prompt_injection
+stages: [input]
+enabled: true
+mode: enforce
+action: block
+threshold: 0.80
+tier: model               # layer 2 is a CPU model; tiered scheduling arrives in PR-06
+on_error: fail_closed     # an attack guard that crashed must not wave traffic through
+timeout_ms: 3000
+params:
+  classifier:
+    enabled: true
+    model: protectai/deberta-v3-base-prompt-injection-v2
+  patterns:
+    # Direct overrides of the system prompt.
+    - name: ignore_instructions
+      regex: '\b(ignore|disregard|forget|override|bypass|discard)\b[^.?!\n]{0,60}\b(previous|prior|above|earlier|original|all|every|your)\b[^.?!\n]{0,40}\b(instructions?|rules?|prompts?|guidelines?|constraints?|restrictions?|directives?)\b'
+      weight: 0.85
+    - name: new_instructions_replace
+      regex: '\b(new|updated|revised)\s+(instructions?|rules?|directives?)\b[^.?!\n]{0,60}\b(replace|supersede|override|instead of)\b'
+      weight: 0.80
+    - name: you_are_now_mode
+      regex: '\byou are now (in )?(maintenance|debug|admin|developer|unrestricted|system)\s*mode\b'
+      weight: 0.80
+    - name: fake_system_update
+      regex: '\b(urgent\s+)?system\s+(update|note|notice|alert|directive)\b[^.?!\n]{0,80}\b(suspend|disabled?|ignore|replace|no longer|must now)\b'
+      weight: 0.60
+    # Chat-template role tags pasted into user text.
+    - name: role_tag_tokens
+      regex: '<\|\s*(system|user|assistant|im_start|im_end)\s*\|>|<<\s*SYS\s*>>|\[\s*INST\s*\]|###\s*(instruction|system)\b'
+      weight: 0.90
+    # Prompt-leak requests.
+    - name: reveal_system_prompt
+      regex: '\b(print|reveal|show|output|display|repeat|recite|leak|expose|share|prefix|start|begin|reply with)\b[^.?!\n]{0,70}\b(system\s+(prompt|message)|hidden\s+(instructions?|prompt)|initial\s+(configuration|prompt|instructions?)|internal\s+(configuration|instructions?)|your\s+(configuration|instructions?|prompt)|configuration\s+block|instructions? you were given)\b'
+      weight: 0.85
+    - name: repeat_text_above
+      regex: '\b(repeat|print|output|show)\b[^.?!\n]{0,40}\b(text|everything|all|content)\b[^.?!\n]{0,20}\babove\b'
+      weight: 0.80
+    # Directives addressed to the assistant inside pasted data (indirect injection).
+    - name: directive_in_pasted_data
+      regex: '\bnote to (the )?(ai|assistant)\b|\b(assistant|ai assistant|system)\s*(note)?\s*:\s*(ignore|disregard|you must|the assistant must|send|email|reveal|do not)'
+      weight: 0.75
+    # Encoded payloads: decode-and-obey phrasing, or a long base64/hex blob in the input.
+    - name: decode_and_follow
+      regex: '\b(decode|decrypt|unscramble)\b[^.?!\n]{0,50}\b(follow|execute|obey|do|run|carry out)\b[^.?!\n]{0,40}\b(instructions?|commands?|what it says)\b'
+      weight: 0.80
+    - name: base64_blob
+      regex: '[A-Za-z0-9+/]{60,}={0,2}'
+      weight: 0.60
+    - name: hex_blob
+      regex: '\b[0-9a-fA-F]{64,}\b'
+      weight: 0.55
+changelog:
+  - "1.0.0: heuristic patterns + protectai/deberta-v3-base-prompt-injection-v2, threshold from the PR-03 sweep (docs/decisions/0003)"

@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # PR-03: the policy version check diffs against origin/main
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
@@ -17,5 +19,10 @@ jobs:
         run: uv sync --all-extras --frozen
       - name: Lint
         run: make lint
+      # PR-03: a changed policy YAML must carry a version bump and a changelog entry.
+      - name: Policy versions bumped
+        run: |
+          git fetch origin main --quiet
+          uv run python scripts/check_policy_versions.py origin/main
       - name: Test
         run: make test
