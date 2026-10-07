@@ -23,7 +23,9 @@ from dwarpal.config import Settings
 from dwarpal.guards.base import Action, GuardContext, Stage
 from dwarpal.pipeline import Pipeline
 
-FAQ = (Path(__file__).resolve().parent.parent / "demo" / "ledgerly_faq.md").read_text()
+_FAQ_PATH = Path(__file__).resolve().parent.parent / "demo" / "ledgerly_faq.md"
+# Missing when installed from a wheel; the demo still works, just without the FAQ context.
+FAQ = _FAQ_PATH.read_text() if _FAQ_PATH.is_file() else ""
 SYSTEM_PROMPT = (
     "You are Ledgerly's support assistant. Answer briefly, using only the FAQ below.\n\n" + FAQ
 )

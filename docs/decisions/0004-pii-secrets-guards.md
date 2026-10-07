@@ -111,6 +111,9 @@ normalised for these two guards: a user does not disguise their own email.
 
 - **Disguised data in user input is not caught** (robustness rows: pii and secrets score 0 on
   spaced and base64 input). Replies are covered, see above.
+- **The name model is unsure about Indian names in business text.** "email Rohit Verma today."
+  can come back as an organisation, while "... today about the refund." comes back as a person.
+  Organisations are not redacted, because that would also hit "Zoho Books" or "Razorpay".
 - **The model can sometimes guess a redacted value from context** ("my email is <EMAIL_1>,
   same as my name at gmail"). Redaction removes the value, not every hint about it.
 - **Restore trusts user turns.** It assumes a user message holds the user's own data. An app

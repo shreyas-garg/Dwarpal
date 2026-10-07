@@ -166,8 +166,11 @@ def create_app(
             headers["X-Dwarpal-Blocked-By"] = trace.blocked_by
         return JSONResponse(content=body, headers=headers)
 
-    # PR-04: Gradio demo at /demo, same container and URL. Skipped without the `demo` extra.
-    if settings.demo_enabled:
+    # PR-04: Gradio demo at /demo, same container and URL. Skipped without the `demo` extra,
+    # and when API keys are set: the demo uses a key, so it would let any visitor in.
+    if settings.demo_enabled and settings.api_key_set:
+        log.warning("API_KEYS is set, so /demo is not mounted (it would bypass the key check)")
+    elif settings.demo_enabled:
         try:
             from dwarpal.demo import mount_demo
         except ImportError:

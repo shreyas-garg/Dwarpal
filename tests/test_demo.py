@@ -69,7 +69,7 @@ def test_verdict_ignores_shadow_and_reports_redaction():
     assert verdict(TRACE).startswith("**Allowed after redaction** by `pii`.")
     restore_only = {**TRACE, "results": [{**TRACE["results"][0], "restored": True}]}
     assert verdict(restore_only).startswith("**Allowed.**")
-    blocked = {**TRACE, "blocked_by": "pii@1.0.0", "blocked_stage": "input"}
+    blocked = {**TRACE, "blocked_by": "pii@1.0.1", "blocked_stage": "input"}
     assert "Blocked" in verdict(blocked)
 
 
@@ -117,7 +117,7 @@ def test_chat_redacts_input_and_shows_the_trace(demo_client):
     # The mock echoes what the model received, and the email comes back through restore.
     assert "arjun.mehta@example.com" in history[1]["content"]
     assert "Allowed after redaction" in text
-    assert any(r[1] == "pii@1.0.0" and r[2] == "redact" for r in rows)
+    assert any(r[1] == "pii@1.0.1" and r[2] == "redact" for r in rows)
 
 
 def test_chat_shows_a_block(demo_client):
@@ -125,7 +125,7 @@ def test_chat_shows_a_block(demo_client):
     history, _, rows, text = make_respond(sdk, "m")(
         CHAT_EXAMPLES["Aadhaar → blocked"][1], [], FAQ, False
     )
-    assert "Blocked" in text and "pii@1.0.0" in text
+    assert "Blocked" in text and "pii@1.0.1" in text
     assert history[1]["content"] == "Sorry, I can't help with that request."
 
 
@@ -157,7 +157,7 @@ async def test_reply_checker_blocks_a_leaked_key(make_client, tmp_path):
     client = make_client(tmp_path)
     check = make_check_reply(lambda: client.app.state.pipeline, "refused")
     shown, rows, text = await check(REPLY_EXAMPLES["Leaked API key"], "")
-    assert shown == "refused" and "secrets@1.0.0" in text
+    assert shown == "refused" and "secrets@1.0.1" in text
     shown, _, text = await check(REPLY_EXAMPLES["Another customer's details"], "")
     assert "<EMAIL_1>" in shown and "Allowed after redaction" in text
     shown, _, text = await check(REPLY_EXAMPLES["Safe reply"], "")

@@ -27,7 +27,7 @@ from dwarpal.guards.normalize import normalize
 from dwarpal.guards.redaction import (
     Redactor,
     Span,
-    redact_user_messages,
+    redact_message,
     resolve_overlaps,
     summarize,
 )
@@ -292,22 +292,24 @@ class PiiGuard(Guard):
         return await asyncio.to_thread(fn, *args) if self.tagger else fn(*args)
 
     async def _check_input(self, ctx: GuardContext) -> GuardResult:
-        # One pass per user turn; redaction reuses these spans instead of running the model again.
-        texts = [message_text(m) for m in ctx.user_messages()]
-        found = await self._off_loop(lambda: {t: self.find(t) for t in set(texts)})
-        spans = [s for t in texts for s in found[t]]
+        # User turns, and assistant turns too: a client resends the reply where we gave the
+        # user their email back, and that must not reach the model in clear on the next turn.
+        turns = [
+            (i, m)
+            for i, m in enumerate(ctx.messages)
+            if m.get("role") in ("user", "assistant") and m.get("content") is not None
+        ]
+        found = await self._off_loop(lambda: [self.find(message_text(m)) for _, m in turns])
+        spans = [s for f in found for s in f]
         if not spans:
             return self.allow()
         action, reason = self._decide(spans)
         if action != Action.REDACT:
             return self.result(action, 1.0, reason)
         redactor = Redactor()
-        messages = await self._off_loop(
-            redact_user_messages,
-            ctx.messages,
-            lambda t: found[t] if t in found else self.find(t),  # content parts land here
-            redactor,
-        )
+        messages = list(ctx.messages)
+        for (i, m), f in zip(turns, found, strict=True):
+            messages[i] = redact_message(m, f, redactor)
         # Keyed by policy ref, and never from a shadow run, so a v2 on trial can't overwrite v1.
         if self.restore and self.policy.mode != "shadow":
             ctx.state[self.policy.ref] = redactor.mapping()
@@ -317,10 +319,13 @@ class PiiGuard(Guard):
         original = ctx.response_text or ""
         restored, own_values = self._restore(ctx, original)
         spans = [s for s in await self._off_loop(self.find, restored) if s.value not in own_values]
-        if not spans and (plain := normalize(restored)) != restored:
-            # "a r j u n @ ..." in a reply is data being smuggled out; there is no clean span to
-            # redact in the original, so the reply is blocked.
-            hidden = [s for s in self.find(plain) if s.value not in own_values]
+        # Look for data hidden by spacing it out, with what we already found masked, so a reply
+        # with one plain email and one spaced-out email doesn't get away with the second.
+        masked = Redactor().apply(restored, spans)
+        if (plain := normalize(masked)) != masked:
+            hidden = [
+                s for s in await self._off_loop(self.find, plain) if s.value not in own_values
+            ]
             if hidden:
                 return self.result(
                     Action.BLOCK, 1.0, f"found {summarize(hidden)} in disguised form"
@@ -339,5 +344,4 @@ class PiiGuard(Guard):
         action, reason = self._decide(spans)
         if action != Action.REDACT:
             return self.result(action, 1.0, reason)
-        redacted = Redactor().apply(restored, spans)
-        return self.result(Action.REDACT, 1.0, reason, redacted_text=redacted)
+        return self.result(Action.REDACT, 1.0, reason, redacted_text=masked)
