@@ -1,0 +1,16 @@
+# Reference policy. Copy this file when adding a new guard.
+name: max_length
+version: 1.0.0            # semver; bump on ANY change to this file
+guard: max_length         # registry key from @register(...)
+stages: [input]
+enabled: true
+mode: enforce             # enforce | shadow (shadow arrives in PR-03)
+action: block             # block | redact | flag
+threshold: 0.5            # inputs over max_chars score >= 0.5
+tier: cheap               # cheap | model | llm (used for ordering from PR-06)
+on_error: fail_closed     # fail_open | fail_closed
+timeout_ms: 50
+params:
+  max_chars: 4000
+changelog:
+  - "1.0.0: block user input longer than 4000 characters"
