@@ -1,0 +1,30 @@
+# Personal data in input and output. Redact with numbered placeholders, block on Aadhaar, and
+# give the user their own values back in the reply. GSTIN and IFSC are not treated as PII
+# (public business ids). See docs/decisions/0004.
+name: pii
+version: 1.0.0
+guard: pii
+stages: [input, output]
+enabled: true
+mode: enforce
+action: redact
+threshold: 0.5            # every recogniser is a yes/no decision, a hit scores 1.0
+tier: model               # the name model is CPU work; the regexes alone take ~0.1 ms
+on_error: fail_closed     # a crashed PII filter must not let personal data through
+timeout_ms: 1000
+params:
+  entities: [EMAIL, UPI, PHONE, PAN, AADHAAR, CARD, BANK_ACCOUNT, IBAN, DOB, PASSPORT, VOTER_ID, ADDRESS, NAME]
+  # Aadhaar has legal limits on sharing, so we refuse instead of quietly redacting.
+  block_on: [AADHAAR]
+  allow:
+    - support@ledgerly.example   # our public support address (demo/ledgerly_faq.md)
+  restore_in_reply: true
+  ner:
+    enabled: true
+    model: dslim/distilbert-NER
+    revision: dfa2838a127384aabb82ed7719e16dab84c42a2a
+    min_score: 0.5
+    # Words the model takes for people in our domain. Measured on the eval sets, see 0004.
+    never_names: [ledgerly, aadhaar]
+changelog:
+  - "1.0.0: EMAIL, UPI, PHONE, PAN, AADHAAR, CARD, IBAN by regex + checksum; BANK_ACCOUNT, DOB, PASSPORT, VOTER_ID only next to a cue word; ADDRESS; NAME by distilbert-NER; redact, block on Aadhaar, restore the user's own values in the reply"

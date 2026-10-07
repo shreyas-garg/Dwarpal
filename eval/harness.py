@@ -213,7 +213,8 @@ async def _score_pipeline_case(
     if (cached := cache.get(key)) is not None:
         return Outcome(case.id, **cached)
     trace = await pipeline.run(_payload_for(case), f"eval-{case.id}")
-    redacted = any(r.action is Action.REDACT for r in trace.results)
+    # PR-04: count only enforced catches; a shadow redact or a pii restore changes nothing.
+    redacted = any(r.caught and not r.shadow for r in trace.results)
     decision = {
         "caught": trace.blocked or redacted,
         "action": trace.blocked_by or ("redact" if redacted else "allow"),

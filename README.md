@@ -41,7 +41,7 @@ More detail: [docs/architecture.md](docs/architecture.md).
 |---|---|---|---|
 | max_length (reference) | input | `policies/max_length.yaml` | ✅ |
 | prompt_injection, jailbreak | input | `policies/prompt_injection.yaml`, `policies/jailbreak.yaml` | ✅ |
-| pii, secrets | input + output | PR-04 | ⏳ |
+| pii, secrets | input + output | `policies/pii.yaml`, `policies/secrets.yaml` | ✅ |
 | banned_topics, toxicity | input / output | PR-05 | ⏳ |
 | output_schema, faithfulness | output | PR-06 | ⏳ |
 
@@ -76,6 +76,10 @@ Without an API key, run against the mock model:
 make mock                     # terminal 1: fake LLM on :9000
 make dev-mock                 # terminal 2: proxy on :8000 pointed at the mock
 ```
+
+The demo chat is at http://localhost:8000/demo (try the attack dropdown).
+`uv run python scripts/smoke_data_leak.py --mock` checks the PII and secrets guards against the
+running proxy.
 
 Call it like OpenAI:
 

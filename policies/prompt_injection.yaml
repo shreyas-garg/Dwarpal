@@ -3,7 +3,7 @@
 # the weighted patterns below, then a pretrained classifier; score = max of the two.
 # Adding a phrasing here is a policy change: bump the version and add a changelog line.
 name: prompt_injection
-version: 1.0.0
+version: 1.1.0
 guard: prompt_injection
 stages: [input]
 enabled: true
@@ -16,7 +16,8 @@ timeout_ms: 3000
 params:
   classifier:
     enabled: true
-    model: protectai/deberta-v3-base-prompt-injection-v2
+    model: Horizon-Labs/prompt-injection-guard-base
+    revision: e4fbfc6f603e24c675cdf310c3b8d7abaa825666
   patterns:
     # Direct overrides of the system prompt.
     - name: ignore_instructions
@@ -58,3 +59,4 @@ params:
       weight: 0.55
 changelog:
   - "1.0.0: heuristic patterns + protectai/deberta-v3-base-prompt-injection-v2, threshold from the PR-03 sweep (docs/decisions/0003)"
+  - "1.1.0: classifier swapped to Horizon-Labs/prompt-injection-guard-base, which stops blocking questions about the user's own account data (docs/decisions/0004)"

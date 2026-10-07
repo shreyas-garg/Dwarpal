@@ -25,6 +25,7 @@ import asyncio
 
 from dwarpal.guards.base import Guard, GuardContext, GuardResult, Stage, message_text
 from dwarpal.guards.heuristics import CompiledPattern, compile_patterns, score_texts
+from dwarpal.guards.normalize import normalize
 
 
 class InputAttackGuard(Guard):
@@ -45,11 +46,15 @@ class InputAttackGuard(Guard):
 
             model_id = config.get("model", DEFAULT_MODEL)
             # First call downloads and loads the model; off the event loop.
-            self._classifier = await asyncio.to_thread(get_classifier, model_id)
+            revision = config.get("revision")  # PR-04: pin the model like any other dependency
+            self._classifier = await asyncio.to_thread(get_classifier, model_id, revision)
 
     def _texts(self, ctx: GuardContext) -> list[str]:
         texts = [message_text(m) for m in ctx.user_messages()]
         texts.extend(ctx.context_docs)
+        # PR-04: also score a de-disguised copy (spaced letters, invisible chars), only when it
+        # differs, so ordinary messages cost nothing extra.
+        texts.extend(n for t in list(texts) if (n := normalize(t)) != t)
         return [t for t in texts if t.strip()]
 
     async def check(self, ctx: GuardContext, stage: Stage) -> GuardResult:

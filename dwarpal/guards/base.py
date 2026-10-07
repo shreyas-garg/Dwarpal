@@ -52,6 +52,10 @@ class GuardContext:
     context_docs: list[str] = field(default_factory=list)  # supplied context, for faithfulness
     response_schema: dict[str, Any] | None = None  # expected JSON schema, for output_schema
     request_id: str = ""
+    # PR-04: per-request scratch space for guards, keyed by policy ref. The same context
+    # object goes through the input and output stages, so a guard can hand itself data
+    # (pii keeps the values it redacted, to give them back in the reply).
+    state: dict[str, Any] = field(default_factory=dict)
 
     def user_messages(self) -> list[dict[str, Any]]:
         return [m for m in self.messages if m.get("role") == "user"]
@@ -82,10 +86,13 @@ class GuardResult:
     error: bool = False  # True when the guard crashed and on_error decided the action
     # PR-03: True when the policy ran in shadow mode — the decision was logged, not enforced.
     shadow: bool = False  # filled by the pipeline
+    # PR-04: REDACT that only gave the user back their own values (pii restore). It changes
+    # the reply, so the pipeline must apply it, but nothing was caught.
+    restored: bool = False
 
     @property
     def caught(self) -> bool:
-        return self.action in (Action.BLOCK, Action.REDACT)
+        return self.action in (Action.BLOCK, Action.REDACT) and not self.restored
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -99,6 +106,7 @@ class GuardResult:
             "cost_usd": self.cost_usd,
             "error": self.error,
             "shadow": self.shadow,
+            "restored": self.restored,
         }
 
 
