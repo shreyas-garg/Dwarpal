@@ -33,16 +33,30 @@ _instances: dict[str, InjectionClassifier] = {}
 _lock = threading.Lock()
 
 
-def get_classifier(model_id: str = DEFAULT_MODEL) -> InjectionClassifier:
+def get_classifier(
+    model_id: str = DEFAULT_MODEL, revision: str | None = None
+) -> InjectionClassifier:
     """Process-wide singleton per model id. Safe to call from several guards' setup()."""
+    key = f"{model_id}@{revision}"
     with _lock:
-        if model_id not in _instances:
-            _instances[model_id] = InjectionClassifier(model_id)
-        return _instances[model_id]
+        if key not in _instances:
+            _instances[key] = InjectionClassifier(model_id, revision)
+        return _instances[key]
+
+
+def fetch_model_file(download, model_id: str, name: str, revision: str | None) -> str:
+    """PR-04: repos keep the tokenizer and config next to the ONNX file or at the root
+    (Horizon-Labs does the latter). A pinned revision keeps evals reproducible."""
+    from huggingface_hub.utils import EntryNotFoundError, LocalEntryNotFoundError
+
+    try:
+        return download(model_id, f"onnx/{name}", revision=revision)
+    except (EntryNotFoundError, LocalEntryNotFoundError):  # online 404, or offline cache miss
+        return download(model_id, name, revision=revision)
 
 
 class InjectionClassifier:
-    def __init__(self, model_id: str = DEFAULT_MODEL):
+    def __init__(self, model_id: str = DEFAULT_MODEL, revision: str | None = None):
         try:
             import numpy as np  # noqa: F401
             import onnxruntime
@@ -55,13 +69,19 @@ class InjectionClassifier:
             ) from exc
 
         self.model_id = model_id
-        model_path = hf_hub_download(model_id, "onnx/model.onnx")
-        tokenizer_path = hf_hub_download(model_id, "onnx/tokenizer.json")
-        config_path = hf_hub_download(model_id, "onnx/config.json")
+        model_path = fetch_model_file(hf_hub_download, model_id, "model.onnx", revision)
+        tokenizer_path = fetch_model_file(hf_hub_download, model_id, "tokenizer.json", revision)
+        config_path = fetch_model_file(hf_hub_download, model_id, "config.json", revision)
 
         self.tokenizer = Tokenizer.from_file(tokenizer_path)
         self.tokenizer.enable_truncation(MAX_TOKENS)
-        self.session = onnxruntime.InferenceSession(model_path, providers=["CPUExecutionProvider"])
+        options = onnxruntime.SessionOptions()
+        # PR-04: idle worker threads busy-wait by default and starve other ONNX sessions in the
+        # process (the pii name model); with both loaded, inference ran ~4x slower.
+        options.add_session_config_entry("session.intra_op.allow_spinning", "0")
+        self.session = onnxruntime.InferenceSession(
+            model_path, options, providers=["CPUExecutionProvider"]
+        )
         self.input_names = {i.name for i in self.session.get_inputs()}
 
         config = json.loads(open(config_path).read())

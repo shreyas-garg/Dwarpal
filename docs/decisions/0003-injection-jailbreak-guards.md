@@ -2,6 +2,9 @@
 
 **Status:** accepted · **Owner:** Harshit Goel · **PR:** 03
 
+> Update (PR-04): the classifier was replaced in version 1.1.0 after it blocked plain account
+> questions. Heuristics and threshold are unchanged. See [0005](0005-injection-classifier-swap.md).
+
 ## Decision
 
 `prompt_injection` and `jailbreak` are each two layers over the same contract:
