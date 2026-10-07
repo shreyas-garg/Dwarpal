@@ -80,6 +80,8 @@ class GuardResult:
     latency_ms: float = 0.0  # filled by the pipeline
     cost_usd: float = 0.0  # set this if your guard calls a paid model
     error: bool = False  # True when the guard crashed and on_error decided the action
+    # PR-03: True when the policy ran in shadow mode — the decision was logged, not enforced.
+    shadow: bool = False  # filled by the pipeline
 
     @property
     def caught(self) -> bool:
@@ -96,6 +98,7 @@ class GuardResult:
             "latency_ms": round(self.latency_ms, 3),
             "cost_usd": self.cost_usd,
             "error": self.error,
+            "shadow": self.shadow,
         }
 
 

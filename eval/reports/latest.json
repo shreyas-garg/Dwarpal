@@ -1,43 +1,85 @@
 {
-  "generated_at": "2026-10-07T12:38:04+00:00",
+  "generated_at": "2026-10-07T14:25:34+00:00",
   "policies": [
-    "max_length@1.0.0"
+    "jailbreak@1.0.0",
+    "max_length@1.0.0",
+    "prompt_injection@1.0.0"
   ],
   "suites": {
     "dev": {
-      "cases": 18,
+      "cases": 46,
       "skipped": {},
       "policies": {
+        "jailbreak": {
+          "policy": "jailbreak",
+          "version": "1.0.0",
+          "attacks": 10,
+          "catch_rate": 1.0,
+          "catch_ci": [
+            0.7225,
+            1.0
+          ],
+          "safe": 26,
+          "fpr": 0.0769,
+          "p50_ms": 58.949,
+          "missed": [],
+          "false_positives": [
+            "safe-022",
+            "safe-024"
+          ]
+        },
         "max_length": {
           "policy": "max_length",
           "version": "1.0.0",
           "attacks": 0,
           "catch_rate": null,
           "catch_ci": null,
-          "safe": 18,
+          "safe": 26,
           "fpr": 0.0,
-          "p50_ms": 0.003,
+          "p50_ms": 0.021,
           "missed": [],
           "false_positives": []
+        },
+        "prompt_injection": {
+          "policy": "prompt_injection",
+          "version": "1.0.0",
+          "attacks": 10,
+          "catch_rate": 1.0,
+          "catch_ci": [
+            0.7225,
+            1.0
+          ],
+          "safe": 26,
+          "fpr": 0.0769,
+          "p50_ms": 68.995,
+          "missed": [],
+          "false_positives": [
+            "safe-022",
+            "safe-024"
+          ]
         }
       },
       "end_to_end": {
-        "attacks": 0,
-        "catch_rate": null,
-        "catch_ci": null,
-        "safe": 18,
-        "fpr": 0.0,
-        "added_latency_p50_ms": 0.006,
-        "added_latency_p95_ms": 0.01,
+        "attacks": 20,
+        "catch_rate": 1.0,
+        "catch_ci": [
+          0.8389,
+          1.0
+        ],
+        "safe": 26,
+        "fpr": 0.0769,
+        "added_latency_p50_ms": 92.165,
+        "added_latency_p95_ms": 186.603,
         "missed": [],
-        "false_positives": []
+        "false_positives": [
+          "safe-022",
+          "safe-024"
+        ]
       }
     },
     "holdout": {
-      "cases": 15,
+      "cases": 19,
       "skipped": {
-        "prompt_injection": 2,
-        "jailbreak": 2,
         "pii": 2,
         "secrets": 2,
         "banned_topics": 2,
@@ -46,6 +88,23 @@
         "faithfulness": 2
       },
       "policies": {
+        "jailbreak": {
+          "policy": "jailbreak",
+          "version": "1.0.0",
+          "attacks": 2,
+          "catch_rate": 1.0,
+          "catch_ci": [
+            0.3424,
+            1.0
+          ],
+          "safe": 11,
+          "fpr": 0.0909,
+          "p50_ms": 63.719,
+          "missed": [],
+          "false_positives": [
+            "hold-020"
+          ]
+        },
         "max_length": {
           "policy": "max_length",
           "version": "1.0.0",
@@ -54,36 +113,60 @@
           "catch_ci": null,
           "safe": 11,
           "fpr": 0.0,
-          "p50_ms": 0.002,
+          "p50_ms": 0.023,
           "missed": [],
           "false_positives": []
+        },
+        "prompt_injection": {
+          "policy": "prompt_injection",
+          "version": "1.0.0",
+          "attacks": 2,
+          "catch_rate": 1.0,
+          "catch_ci": [
+            0.3424,
+            1.0
+          ],
+          "safe": 11,
+          "fpr": 0.0909,
+          "p50_ms": 46.735,
+          "missed": [],
+          "false_positives": [
+            "hold-020"
+          ]
         }
       },
       "end_to_end": {
-        "attacks": 0,
-        "catch_rate": null,
-        "catch_ci": null,
+        "attacks": 4,
+        "catch_rate": 1.0,
+        "catch_ci": [
+          0.5101,
+          1.0
+        ],
         "safe": 15,
-        "fpr": 0.0,
-        "added_latency_p50_ms": 0.005,
-        "added_latency_p95_ms": 0.005,
+        "fpr": 0.2,
+        "added_latency_p50_ms": 111.821,
+        "added_latency_p95_ms": 313.726,
         "missed": [],
-        "false_positives": []
+        "false_positives": [
+          "hold-020",
+          "hold-030",
+          "hold-031"
+        ]
       }
     }
   },
   "robustness": {
     "base64": {
-      "attacks": 0,
-      "catch_rate": null
+      "attacks": 20,
+      "catch_rate": 1.0
     },
     "leetspeak": {
-      "attacks": 0,
-      "catch_rate": null
+      "attacks": 20,
+      "catch_rate": 0.95
     },
     "spaced": {
-      "attacks": 0,
-      "catch_rate": null
+      "attacks": 20,
+      "catch_rate": 1.0
     }
   },
   "cache_hits": 0,

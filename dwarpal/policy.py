@@ -77,9 +77,6 @@ def load_policy_file(path: Path) -> Policy:
             f"{path}: guard {policy.guard!r} does not support stage(s) "
             f"{sorted(s.value for s in unsupported)}"
         )
-    if policy.mode == "shadow":
-        # TODO(PR-03, Harshit Goel): implement shadow mode in the pipeline, then remove this.
-        raise PolicyError(f"{path}: mode 'shadow' is not implemented yet")
     return policy
 
 
@@ -88,25 +85,39 @@ def load_policies(policy_dir: Path, enabled: set[str] | None = None) -> list[Pol
 
     Returns enabled policies only, sorted by file name for a stable order.
     `enabled` restricts to those policy names (None = all).
+
+    Two versions of the same policy may run side by side — e.g. prompt_injection@1.1.0 in
+    shadow next to 1.0.0 enforcing, so a new version is tried on real traffic before it
+    blocks anything — but at most one of them may enforce, and versions must differ.
     """
     discover()
     if not policy_dir.is_dir():
         raise PolicyError(f"policy directory not found: {policy_dir}")
 
     policies: list[Policy] = []
-    seen: dict[str, Path] = {}
+    seen: dict[tuple[str, str], Path] = {}  # (name, version) -> file
+    enforcing: dict[str, Path] = {}  # name -> file of the enforce-mode version
+    names: set[str] = set()
     for path in sorted(policy_dir.glob("*.yaml")):
         policy = load_policy_file(path)
-        if policy.name in seen:
-            raise PolicyError(
-                f"{path}: duplicate policy name {policy.name!r} (also in {seen[policy.name]})"
-            )
-        seen[policy.name] = path
-        if policy.enabled and (enabled is None or policy.name in enabled):
-            policies.append(policy)
+        key = (policy.name, policy.version)
+        if key in seen:
+            raise PolicyError(f"{path}: duplicate policy {policy.ref} (also in {seen[key]})")
+        seen[key] = path
+        names.add(policy.name)
+        if not (policy.enabled and (enabled is None or policy.name in enabled)):
+            continue
+        if policy.mode == "enforce":
+            if policy.name in enforcing:
+                raise PolicyError(
+                    f"{path}: a second enforcing version of {policy.name!r} "
+                    f"(also in {enforcing[policy.name]}); put one of them in shadow mode"
+                )
+            enforcing[policy.name] = path
+        policies.append(policy)
 
     if enabled:
-        missing = enabled - seen.keys()
+        missing = enabled - names
         if missing:
             raise PolicyError(f"ENABLED_POLICIES names unknown policies: {sorted(missing)}")
     return policies

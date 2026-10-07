@@ -47,7 +47,7 @@ One YAML file per policy in `policies/`. Fields:
 | `guard` | Which registered guard class runs this policy. |
 | `stages` | `input`, `output` or both; must be stages the guard supports. |
 | `enabled` | Off = not loaded. |
-| `mode` | `enforce`, or `shadow` (log only; PR-03). |
+| `mode` | `enforce`, or `shadow`: the guard runs and its decision lands in the trace, but it never blocks or redacts. Two versions of one policy may run side by side (e.g. `1.1.0` in shadow next to `1.0.0` enforcing) as long as at most one enforces, so a new version is tried on real traffic before it can block. `GET /v1/dwarpal/policies` shows what is active. |
 | `action` | What happens when score ≥ threshold: `block`, `redact` or `flag`. |
 | `threshold` | 0..1. |
 | `tier` | `cheap`, `model` or `llm`; used for ordering and concurrency (PR-06). |

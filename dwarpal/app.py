@@ -98,6 +98,28 @@ def create_app(
             "policies": pipeline.policy_refs,
         }
 
+    # PR-03: what is guarding traffic right now — policy versions, modes, and the deployed SHA.
+    @app.get("/v1/dwarpal/policies")
+    async def policies(request: Request) -> Any:
+        if (denied := check_auth(request)) is not None:
+            return denied
+        pipeline: Pipeline = request.app.state.pipeline
+        return {
+            "git_sha": settings.git_sha,
+            "policies": [
+                {
+                    "name": p.name,
+                    "version": p.version,
+                    "mode": p.mode,
+                    "stages": [s.value for s in p.stages],
+                    "action": p.action.value,
+                    "threshold": p.threshold,
+                    "tier": p.tier,
+                }
+                for p in pipeline.policies
+            ],
+        }
+
     @app.get("/v1/models")
     async def models(request: Request) -> Any:
         if (denied := check_auth(request)) is not None:

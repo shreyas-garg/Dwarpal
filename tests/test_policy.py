@@ -34,7 +34,6 @@ def test_valid_policy_defaults(policy_dir):
         (VALID.replace("[input]", "[]"), "at least one"),
         (VALID + "colour: blue\n", "Extra inputs are not permitted"),
         (VALID + "threshold: 1.5\n", "less than or equal to 1"),
-        (VALID + "mode: shadow\n", "not implemented yet"),
         ("just a string", "mapping"),
     ],
 )
@@ -43,8 +42,10 @@ def test_invalid_policies_fail_loudly(policy_dir, text, message):
         load_policies(policy_dir(text))
 
 
-def test_duplicate_names_rejected(policy_dir):
-    with pytest.raises(PolicyError, match="duplicate policy name"):
+def test_duplicate_name_and_version_rejected(policy_dir):
+    # PR-03: the same name may appear twice with different versions (shadow rollout,
+    # covered in test_shadow_mode.py); the same name AND version may not.
+    with pytest.raises(PolicyError, match="duplicate policy"):
         load_policies(policy_dir(VALID, VALID))
 
 

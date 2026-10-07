@@ -40,7 +40,7 @@ More detail: [docs/architecture.md](docs/architecture.md).
 | Guard | Stage | Policy | Status |
 |---|---|---|---|
 | max_length (reference) | input | `policies/max_length.yaml` | ✅ |
-| prompt_injection, jailbreak | input | PR-03 | ⏳ |
+| prompt_injection, jailbreak | input | `policies/prompt_injection.yaml`, `policies/jailbreak.yaml` | ✅ |
 | pii, secrets | input + output | PR-04 | ⏳ |
 | banned_topics, toxicity | input / output | PR-05 | ⏳ |
 | output_schema, faithfulness | output | PR-06 | ⏳ |

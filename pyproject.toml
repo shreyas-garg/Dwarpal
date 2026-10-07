@@ -16,7 +16,13 @@ dependencies = [
 [project.optional-dependencies]
 # Heavy dependencies go in extras so the core stays light.
 # Guard owners: add your libraries to the matching group in your PR.
-ml = []   # transformers / onnxruntime / sentence-transformers / detoxify (PRs 03, 05)
+# PR-03 uses the model's prebuilt ONNX weights, so no torch/transformers needed.
+ml = [
+    "onnxruntime>=1.18",
+    "tokenizers>=0.19",
+    "huggingface-hub>=0.23",
+    "numpy>=1.26",
+]   # sentence-transformers / detoxify still to come (PR 05)
 pii = []  # presidio-analyzer / presidio-anonymizer / spacy (PR 04)
 
 [dependency-groups]

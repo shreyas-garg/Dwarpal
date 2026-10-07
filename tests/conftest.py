@@ -85,6 +85,10 @@ def make_client() -> Iterator[Callable[..., TestClient]]:
     clients: list[TestClient] = []
 
     def make(policy_dir: Path = REPO_POLICIES, **settings_kw) -> TestClient:
+        # PR-03 onwards some repo policies load real models in setup(). Unit tests run
+        # against max_length unless a test enables other policies explicitly.
+        if policy_dir is REPO_POLICIES:
+            settings_kw.setdefault("enabled_policies", "max_length")
         settings = Settings(
             _env_file=None,
             upstream_base_url="http://mock/v1/",

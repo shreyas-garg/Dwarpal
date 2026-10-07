@@ -1,0 +1,61 @@
+# Jailbreak: persuasion aimed at making the model drop its safety behaviour — personas,
+# "hypothetically", DAN-style modes, refusal suppression. Two layers (docs/decisions/0003):
+# the weighted patterns below, then the same pretrained classifier the injection guard uses;
+# score = max of the two. Pattern edits are policy changes: bump the version.
+name: jailbreak
+version: 1.0.0
+guard: jailbreak
+stages: [input]
+enabled: true
+mode: enforce
+action: block
+threshold: 0.80
+tier: model               # layer 2 is a CPU model; tiered scheduling arrives in PR-06
+on_error: fail_closed     # an attack guard that crashed must not wave traffic through
+timeout_ms: 3000
+params:
+  classifier:
+    enabled: true
+    model: protectai/deberta-v3-base-prompt-injection-v2
+  patterns:
+    # Persona swaps that advertise the persona as unfiltered.
+    - name: persona_without_rules
+      regex: '\byou are (now |no longer )?[^.?!\n]{0,60}\b(no (content polic\w*|restrictions?|rules?|filters?|limits?)|unfiltered|uncensored|without (restrictions?|rules?|limits?|a filter))'
+      weight: 0.85
+    - name: never_refuses
+      regex: '\b(never|won''t|will not|must not|do(es)? not)\s+(refuse|decline)\b|\bwithout refusing\b|\banswers? (every|any|all)\s*(question|message|prompt|thing)'
+      weight: 0.70
+    # Hypothetical / fiction wrappers around dropping the rules.
+    - name: hypothetical_no_rules
+      regex: '\b(hypothetical(ly)?|thought experiment)\b[^.?!\n]{0,80}\b(no (safety )?(rules?|restrictions?|guidelines?)|drop (your|its|the) (safety )?(rules?|restrictions?)|without (safety|restrictions?|rules?)|allowed to)\b'
+      weight: 0.80
+    - name: fiction_ignores_guidelines
+      regex: '\b(fiction|story|novel|screenplay|script|villain|role-?play)\b[^.?!\n]{0,100}\b(ignores? (its |their )?(guidelines?|rules?|content polic\w*)|no (disclaimers?|refusals?|warnings?)|stay in character)'
+      weight: 0.70
+    # Telling the model how to answer: no refusals, no warnings, no policy talk.
+    - name: refusal_suppression
+      regex: '\b(do not|don''t|never|without)\b[^.?!\n]{0,30}\b(refuse|refusing|add (warnings?|disclaimers?)|mention (polic\w*|rules|guidelines)|moraliz\w*|lectur\w*)'
+      weight: 0.80
+    # DAN-style modes and dual outputs.
+    - name: special_mode
+      regex: '\b(developer|dev|dan|god|jailbreak|uncensored|unrestricted)\s+mode\b'
+      weight: 0.80
+    - name: dual_output
+      regex: '\btwo (answers|responses|replies)\b[^.?!\n]{0,60}\b(uncensored|unfiltered|unrestricted|\[dev\]|no (rules|filter))'
+      weight: 0.70
+    # Asking for the safety machinery to be switched off.
+    - name: drop_safeguards
+      regex: '\b(drop|disable|turn off|switch off|remove|lift|suspend)\b[^.?!\n]{0,30}\b(your |the |its |all )?\s*(safety )?(restrictions?|guardrails?|filters?|safeguards?|content polic\w*|moderation)'
+      weight: 0.80
+    - name: pretend_filter_off
+      regex: '\b(pretend|imagine|act as if|as though)\b[^.?!\n]{0,60}\b(filter|moderation|safety|guardrails?)\b[^.?!\n]{0,40}\b(crashed|off|disabled|gone|not running|broken)\b'
+      weight: 0.80
+    # Probes for the internal safety rules themselves.
+    - name: internal_rules_probe
+      regex: '\binternal (moderation |safety )?(rules?|guidelines?|polic(y|ies))\b[^.?!\n]{0,60}\b(recite|recit\w*|read|reveal|exactly|word for word|verbatim)|\b(recite|reveal)\b[^.?!\n]{0,60}\binternal (moderation |safety )?(rules?|guidelines?)'
+      weight: 0.70
+    - name: authority_disable_request
+      regex: '\b(i''m|i am|this is)\b[^.?!\n]{0,60}\b(safety engineer|red[- ]?team\w*|internal (test|audit)\w*|authoriz\w*)\b[^.?!\n]{0,60}\b(disable|bypass|turn off|lift|drop)\b'
+      weight: 0.60
+changelog:
+  - "1.0.0: heuristic patterns + protectai/deberta-v3-base-prompt-injection-v2, threshold from the PR-03 sweep (docs/decisions/0003)"
