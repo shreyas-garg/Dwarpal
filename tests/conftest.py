@@ -89,6 +89,7 @@ def make_client() -> Iterator[Callable[..., TestClient]]:
         # against max_length unless a test enables other policies explicitly.
         if policy_dir is REPO_POLICIES:
             settings_kw.setdefault("enabled_policies", "max_length")
+        settings_kw.setdefault("demo_enabled", False)  # PR-04: tests/test_demo.py turns it on
         settings = Settings(
             _env_file=None,
             upstream_base_url="http://mock/v1/",
