@@ -29,6 +29,11 @@ class Settings(BaseSettings):
     expose_trace: bool = True
     refusal_message: str = "Sorry, I can't help with that request."
 
+    # PR-04: the Gradio demo at /demo (needs the `demo` extra). It calls this proxy through
+    # the OpenAI SDK; empty demo_proxy_url = this process, http://127.0.0.1:$PORT/v1.
+    demo_enabled: bool = True
+    demo_proxy_url: str = ""
+
     # Baked into the Docker image at build time so /healthz can prove deployed == main.
     git_sha: str = "dev"
 

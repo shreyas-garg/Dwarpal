@@ -23,7 +23,12 @@ ml = [
     "huggingface-hub>=0.23",
     "numpy>=1.26",
 ]   # sentence-transformers / detoxify still to come (PR 05)
-pii = []  # presidio-analyzer / presidio-anonymizer / spacy (PR 04)
+# PR-04: pii and secrets are pure Python (regex + checksums), so they need no extra.
+# The Gradio demo at /demo; the OpenAI SDK is how the demo calls Dwarpal (drop-in check).
+demo = [
+    "gradio>=5.0,<6",
+    "openai>=1.40",
+]
 
 [dependency-groups]
 dev = [

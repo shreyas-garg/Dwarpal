@@ -166,6 +166,15 @@ def create_app(
             headers["X-Dwarpal-Blocked-By"] = trace.blocked_by
         return JSONResponse(content=body, headers=headers)
 
+    # PR-04: Gradio demo at /demo, same container and URL. Skipped without the `demo` extra.
+    if settings.demo_enabled:
+        try:
+            from dwarpal.demo import mount_demo
+        except ImportError:
+            log.info("gradio not installed; /demo disabled")
+        else:
+            app = mount_demo(app, settings)
+
     return app
 
 

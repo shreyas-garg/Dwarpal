@@ -123,6 +123,15 @@ class Pipeline:
         trace.total_latency_ms = _ms_since(start)
         return trace
 
+    # PR-04: run one stage's guards with no upstream call. The demo's "check a model reply"
+    # tab uses it to show output guards on a reply the visitor pastes in.
+    async def check_stage(self, stage: Stage, ctx: GuardContext, request_id: str) -> PipelineTrace:
+        start = time.perf_counter()
+        trace = PipelineTrace(request_id=request_id, policies=self.policy_refs)
+        await self._run_stage(stage, ctx, trace)
+        trace.total_latency_ms = _ms_since(start)
+        return trace
+
     async def _run_stage(self, stage: Stage, ctx: GuardContext, trace: PipelineTrace) -> bool:
         """Run every guard for this stage. Returns True if the request was blocked."""
         for policy, guard in self.guards_for(stage):
