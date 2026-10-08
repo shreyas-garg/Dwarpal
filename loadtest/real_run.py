@@ -13,9 +13,9 @@ seen (from an earlier run) without running the guards, which understates added l
 The requests are the safe questions from the dev and holdout sets, sent with the demo's system
 prompt (the Ledgerly FAQ) and no dwarpal.context, so the faithfulness judge does not run and
 spends no quota. Gemini's free tier allows about 20 requests a day per model, so 50 needs a key
-with billing on (cost: well under $0.10); the run stops at the first 429 and reports what it
-has. Cost per request comes from the proxy's request log: list price from config/pricing.yaml,
-plus guard LLM calls. Writes results/real_run.json and results/real_run.md.
+with billing on. The run stops at the first 429 (quota) or 402 (prepaid credits used up) and
+reports what it has. Cost per request comes from the proxy's request log: list price from
+config/pricing.yaml, plus guard LLM calls. Writes results/real_run.json and results/real_run.md.
 """
 
 from __future__ import annotations
@@ -70,8 +70,8 @@ def run(url: str, token: str, n: int, rpm: float) -> dict[str, Any]:
                 },
             )
             client_ms = (time.perf_counter() - started) * 1000
-            if resp.status_code == 429:
-                stopped = f"429 after {i - 1} requests: {resp.text[:300]}"
+            if resp.status_code in (402, 429):  # out of credits / quota: more calls won't help
+                stopped = f"{resp.status_code} after {i - 1} requests: {resp.text[:300]}"
                 print(stopped)
                 break
             if resp.status_code != 200:
