@@ -1,4 +1,4 @@
-.PHONY: install dev mock dev-mock lint format test eval bench
+.PHONY: install dev mock dev-mock lint format test eval bench dashboard
 
 install:
 	uv sync --all-extras
@@ -32,3 +32,7 @@ eval:
 # Filled in by PR-07 (load test + benchmarks).
 bench:
 	@echo "benchmarks arrive in PR-07"
+
+# PR-07: dashboard on http://localhost:8501, reading the proxy on :8000 (set ADMIN_TOKEN in .env).
+dashboard:
+	uv run --group dashboard streamlit run dashboard/app.py --server.headless true --browser.gatherUsageStats false
