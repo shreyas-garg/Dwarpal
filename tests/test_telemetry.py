@@ -248,9 +248,15 @@ def test_langfuse_trace_has_a_span_per_guard_and_one_for_the_upstream_call():
         "output": 120,
         "total": 820,
     }
-    # Output guards run after the upstream call and end with the request.
+    # Input guards start with the request (they run side by side); output guards start after
+    # the upstream call and the slowest one ends with the request. Nothing sticks out of the
+    # root, so Langfuse's trace latency is the request's total.
+    assert spans["pii@1.0.1"].start_time == spans["prompt_injection@1.1.1"].start_time
+    assert spans["pii@1.0.1"].start_time == root.start_time
     assert spans["toxicity@1.1.0"].end_time == root.end_time
     assert spans["upstream"].end_time == spans["toxicity@1.1.0"].start_time
+    for span in spans.values():
+        assert root.start_time <= span.start_time <= span.end_time <= root.end_time
     langfuse.shutdown()
 
 

@@ -5,9 +5,12 @@ too) and one `generation` for the upstream call, all tagged with the active poli
 Langfuse v4 takes traces on its OTLP endpoint; the older /api/public/ingestion API is being shut
 down on Langfuse Cloud. Attribute names follow the Langfuse SDK (langfuse._client.attributes).
 
-The pipeline measures durations, not start times, so spans are laid out from the request's
-start (input guards, one after another) and its end (upstream call, then output guards). Each
-duration is exact; for guards that ran at the same time (the `model` tier) the start is not.
+The pipeline measures durations, not start times, so each stage's guards are drawn from the
+stage's start, side by side: input guards from the request's start, output guards right after
+the upstream call, which is placed so the slowest output guard ends with the request. Durations
+are exact, and every span stays inside the request, so the trace's total is the request's. The
+starts are approximate only where tiers ran one after another (the `cheap` tier, well under a
+millisecond, and the judge after the `model` tier).
 """
 
 from __future__ import annotations
@@ -88,31 +91,29 @@ class LangfuseExporter:
         )
         parent = trace.set_span_in_context(root)
 
-        def child(name: str, at: int, duration_ms: float, attributes: dict[str, Any]) -> int:
+        def child(name: str, at: int, duration_ms: float, attributes: dict[str, Any]) -> None:
             span = self._tracer.start_span(
                 name, context=parent, start_time=at, attributes={**shared, **attributes}
             )
             span.end(end_time=at + _ns(duration_ms))
-            return at + _ns(duration_ms)
 
         inputs = [g for g in row["guards"] if g["stage"] == "input"]
         outputs = [g for g in row["guards"] if g["stage"] == "output"]
-        at = start
         for g in inputs:
-            at = child(f"{g['guard']}@{g['version']}", at, g["latency_ms"], _guard_attributes(g))
+            child(f"{g['guard']}@{g['version']}", start, g["latency_ms"], _guard_attributes(g))
 
-        called = row["model"] is not None
-        tail_ms = sum(g["latency_ms"] for g in outputs) + (row["upstream_ms"] if called else 0)
-        at = max(start, end - _ns(tail_ms))
-        if called:
+        # A stage lasts at least as long as its slowest guard, so this keeps every span inside
+        # the request and the upstream call clear of the input guards.
+        output_start = end - _ns(max((g["latency_ms"] for g in outputs), default=0.0))
+        if row["model"] is not None:  # the upstream was called
             usage = {
                 "input": row["prompt_tokens"],
                 "output": row["completion_tokens"],
                 "total": row["prompt_tokens"] + row["completion_tokens"],
             }
-            at = child(
+            child(
                 "upstream",
-                at,
+                max(start, output_start - _ns(row["upstream_ms"])),
                 row["upstream_ms"],
                 {
                     "langfuse.observation.type": "generation",
@@ -124,7 +125,9 @@ class LangfuseExporter:
                 },
             )
         for g in outputs:
-            at = child(f"{g['guard']}@{g['version']}", at, g["latency_ms"], _guard_attributes(g))
+            child(
+                f"{g['guard']}@{g['version']}", output_start, g["latency_ms"], _guard_attributes(g)
+            )
         root.end(end_time=end)
 
     def flush(self) -> None:
