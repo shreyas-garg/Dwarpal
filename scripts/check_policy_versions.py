@@ -10,6 +10,11 @@ Rules, for every policies/*.yaml that differs from the base ref (default origin/
   added     -> must carry a non-empty `changelog`
   deleted   -> fine here; the eval gate complains if a baselined policy disappears
 
+PR-06: prompt files under policies/prompts/ are versioned by file name and never edited in
+place. A changed prompt would change the faithfulness judge's decisions under the same policy
+version, which is exactly the stale-cache problem above. Add faithfulness_judge.v2.txt and
+point the policy at it instead (that edit to the YAML then needs its own bump).
+
 Usage: scripts/check_policy_versions.py [base-ref]
 """
 
@@ -22,6 +27,17 @@ from pathlib import Path
 import yaml
 
 POLICY_DIR = "policies"
+PROMPT_DIR = f"{POLICY_DIR}/prompts/"
+
+
+def prompt_violations(kind: str, path: str) -> list[str]:
+    """PR-06: prompts may be added or deleted, never modified."""
+    if kind.startswith("M"):
+        return [
+            f"{path}: prompt files are immutable — add a new version (e.g. *.v2.txt), point "
+            "the policy at it and bump the policy version"
+        ]
+    return []
 
 
 def _field(text: str, path: str, field: str) -> object:
@@ -74,6 +90,10 @@ def main(argv: list[str]) -> int:
     checked = 0
     for line in status.splitlines():
         kind, _, path = line.partition("\t")
+        if path.startswith(PROMPT_DIR):
+            checked += 1
+            problems.extend(prompt_violations(kind, path))
+            continue
         if not path.endswith(".yaml") or kind.startswith("D"):
             continue
         checked += 1

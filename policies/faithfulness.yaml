@@ -1,0 +1,31 @@
+# Faithfulness: block replies whose claims the supplied context does not support. Runs only when
+# the request sends `dwarpal.context`. An LLM judge labels each claim SUPPORTED / UNSUPPORTED /
+# CONTRADICTED; score = share not supported, and any contradiction scores 1.0.
+# See docs/decisions/0007. The judge prompt is versioned by file name: a new prompt is a new
+# prompts/faithfulness_judge.vN.txt plus a version bump here, never an edit in place.
+name: faithfulness
+version: 1.0.0
+guard: faithfulness
+stages: [output]
+enabled: true
+mode: enforce
+action: block
+threshold: 0.30           # dev attacks score >= 0.50, faithful replies 0.00 (docs/decisions/0007)
+tier: llm                 # runs last, so a block by a cheaper guard saves the judge call
+on_error: fail_open       # a judge outage must not take the support bot down with it
+timeout_ms: 10000
+params:
+  prompt: prompts/faithfulness_judge.v1.txt
+  block_on_contradiction: true
+  max_context_chars: 12000
+  judge:
+    model: gemini-2.5-flash
+    temperature: 0
+    max_tokens: 1024
+    extra:
+      reasoning_effort: none    # 2.5 Flash can switch thinking off; it adds cost, not accuracy here
+    # USD per 1M tokens, paid tier, ai.google.dev/gemini-api/docs/pricing, checked 2026-10-08.
+    # The free tier costs nothing; list price is recorded so cost per request means something.
+    price_per_1m_tokens: {input: 0.30, output: 2.50}
+changelog:
+  - "1.0.0: Gemini 2.5 Flash judge with prompt v1, claim-level labels, block at 0.30 or on any contradiction (docs/decisions/0007)"

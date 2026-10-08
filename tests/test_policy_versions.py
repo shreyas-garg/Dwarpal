@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
-from check_policy_versions import violations  # noqa: E402
+from check_policy_versions import prompt_violations, violations  # noqa: E402
 
 OLD = """
 name: prompt_injection
@@ -48,3 +48,12 @@ def test_new_policy_needs_a_changelog():
     bare = OLD.replace('changelog: ["1.0.0: initial"]', "changelog: []")
     assert violations(None, bare, PATH) != []
     assert violations(None, OLD, PATH) == []
+
+
+def test_prompt_files_are_never_edited_in_place():
+    """PR-06: a judge prompt changes by adding a new file, so a version names one prompt."""
+    path = "policies/prompts/faithfulness_judge.v1.txt"
+    assert prompt_violations("A", path) == []
+    assert prompt_violations("D", path) == []
+    (problem,) = prompt_violations("M", path)
+    assert "immutable" in problem
