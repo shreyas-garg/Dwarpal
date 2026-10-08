@@ -7,7 +7,7 @@ PII/secret leaks and claims unsupported by the supplied context. Every check is 
 policy, scored separately against a hand-written red-team set in CI, so a drop in catch rate or a
 rise in false positives blocks the merge.
 
-> Live demo: _TBD (PR-05)_ · Dashboard: _TBD (PR-07)_
+> Live demo: not deployed (optional; see [Deploy](#deploy)), run it locally in two commands · Dashboard: _TBD (PR-07)_
 
 ## Problem
 
@@ -42,7 +42,7 @@ More detail: [docs/architecture.md](docs/architecture.md).
 | max_length (reference) | input | `policies/max_length.yaml` | ✅ |
 | prompt_injection, jailbreak | input | `policies/prompt_injection.yaml`, `policies/jailbreak.yaml` | ✅ |
 | pii, secrets | input + output | `policies/pii.yaml`, `policies/secrets.yaml` | ✅ |
-| banned_topics, toxicity | input / output | PR-05 | ⏳ |
+| banned_topics, toxicity | input / output | `policies/banned_topics.yaml`, `policies/toxicity.yaml` | ✅ |
 | output_schema, faithfulness | output | PR-06 | ⏳ |
 
 ## Results
@@ -96,6 +96,22 @@ print(r.choices[0].message.content, r.choices[0].finish_reason)
 ```
 
 `make lint test` runs what CI runs.
+
+## Deploy
+
+**Not live.** The project is deploy-ready, but Hugging Face now requires a PRO plan for the
+free CPU Space tier, and free hosts without a card (Render, Koyeb) give 512 MB of RAM, less than
+the guard models need. A live deployment is optional for this project, so we did not pay for one.
+
+What is ready: a Docker image with every model baked in at build time, and
+`.github/workflows/deploy.yml`, which pushes `main` to a Hugging Face Docker Space and runs a
+smoke test that checks the Space serves that commit and that its guards allow / block as
+expected. The job skips itself until it is configured. To turn it on: a repo secret `HF_TOKEN`
+(write token), a repo variable `HF_SPACE` (`<owner>/<space>`, on an account with CPU Spaces),
+and the Space secret `UPSTREAM_API_KEY`. The image limits each IP to 20
+requests a minute and the whole demo to 200 a day (`RATE_LIMIT_PER_MINUTE`,
+`DAILY_REQUEST_CAP`, overridable as Space variables). Details:
+[docs/decisions/0006](docs/decisions/0006-content-guards-and-deployment.md).
 
 ## Scope
 

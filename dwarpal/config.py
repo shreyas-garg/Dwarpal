@@ -37,6 +37,12 @@ class Settings(BaseSettings):
     # Baked into the Docker image at build time so /healthz can prove deployed == main.
     git_sha: str = "dev"
 
+    # PR-05: budget protection for the public demo (dwarpal/limits.py). 0 = off; the Docker
+    # image turns both on. Trust X-Forwarded-For only behind a proxy that sets it (HF Spaces).
+    rate_limit_per_minute: int = 0
+    daily_request_cap: int = 0
+    trust_forwarded_for: bool = False
+
     @property
     def enabled_policy_names(self) -> set[str] | None:
         if self.enabled_policies.strip().lower() == "all":

@@ -1,0 +1,44 @@
+# Toxicity: hostile, abusive or demeaning model replies. Layer 1 is toxic-bert with a threshold
+# per label; layer 2 catches condescension without swear words by similarity to the contempt
+# examples below. Either layer crossing its threshold blocks the reply. See docs/decisions/0006.
+# Any change here is a policy change: bump the version and add a changelog line.
+name: toxicity
+version: 1.0.0
+guard: toxicity
+stages: [output]
+enabled: true
+mode: enforce
+action: block
+threshold: 0.50           # default for any label not listed under params.labels
+tier: model
+on_error: fail_closed
+timeout_ms: 3000
+params:
+  model:
+    model: Xenova/toxic-bert            # ONNX export of unitary/toxic-bert
+    revision: 65cbc2607cb7fad64f98d1e8a5a3d1f8577895fd
+    weights: model_quantized.onnx       # int8, 110 MB; scores match fp32 to ~0.02
+  labels:
+    toxic: 0.30
+    severe_toxic: 0.30
+    obscene: 0.50
+    threat: 0.15
+    insult: 0.30
+    identity_hate: 0.20
+  contempt:
+    enabled: true
+    threshold: 0.55       # dev attacks >= 0.57; politest hard negative 0.51
+    embedder:
+      model: sentence-transformers/all-MiniLM-L6-v2
+      revision: 1110a243fdf4706b3f48f1d95db1a4f5529b4d41
+    examples:
+      - If you can't understand something this simple, maybe you shouldn't be running a business.
+      - Honestly, this is a basic question and you should be embarrassed to ask it.
+      - Customers like you waste everyone's time.
+      - Not my problem that you can't follow instructions.
+      - Maybe try reading before you bother support again.
+      - Some people just aren't smart enough to use accounting software.
+      - Do it yourself, I'm not here to babysit you.
+      - Pay up or you'll regret it, and we know where your office is.
+changelog:
+  - "1.0.0: toxic-bert (int8 ONNX) with per-label thresholds, plus a contempt similarity layer (docs/decisions/0006)"

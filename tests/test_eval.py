@@ -95,17 +95,20 @@ def test_repo_datasets_load():
 
     # PR-02 shipped 18 safe cases; PR-03 added 8 hard negatives and 20 input attacks;
     # PR-04 added 18 hard negatives (13 input, 5 output) and 16 pii / secrets attacks.
-    assert len(dev.safe) == 44
-    assert len(dev.attacks) == 36
+    # PR-05 added 8 hard negatives (6 input, 2 output) and 11 banned-topic / toxicity attacks.
+    assert len(dev.safe) == 52
+    assert len(dev.attacks) == 47
     assert {c.target_guard for c in dev.attacks} == {
         "prompt_injection",
         "jailbreak",
         "pii",
         "secrets",
+        "banned_topics",
+        "toxicity",
     }
     assert len(holdout.safe) == 15
     assert sum(holdout.skipped.values()) + len(holdout.attacks) == 16
-    assert {c.author for c in dev.cases} == {"harshit-sachan", "harshit-goel", "yash"}
+    assert {c.author for c in dev.cases} == {"harshit-sachan", "harshit-goel", "yash", "om"}
 
 
 async def test_score_policy_separates_catch_rate_from_false_positives(cache):

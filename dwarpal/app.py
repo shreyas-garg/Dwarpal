@@ -13,6 +13,7 @@ from fastapi.responses import JSONResponse
 
 from dwarpal import __version__
 from dwarpal.config import Settings, get_settings
+from dwarpal.limits import LOOPBACK, DailyCap, RateLimiter, client_ip
 from dwarpal.pipeline import Pipeline, PipelineTrace
 from dwarpal.policy import load_policies
 from dwarpal.upstream import UpstreamClient, UpstreamError
@@ -77,6 +78,9 @@ def create_app(
 
     app = FastAPI(title="Dwarpal", version=__version__, lifespan=lifespan)
     app.state.settings = settings
+    # PR-05: per-IP rate limit and daily cap, both off unless configured.
+    rate_limiter = RateLimiter(settings.rate_limit_per_minute)
+    daily_cap = DailyCap(settings.daily_request_cap)
 
     def check_auth(request: Request) -> JSONResponse | None:
         allowed = settings.api_key_set
@@ -141,6 +145,20 @@ def create_app(
             return openai_error(400, "'messages' must be a list")
         if payload.get("stream"):
             return openai_error(400, "stream=true is not supported by Dwarpal v1")
+
+        # PR-05: budget protection. The demo calls from loopback, so it skips the per-IP limit
+        # and is bounded by the daily cap alone.
+        ip = client_ip(request, settings.trust_forwarded_for)
+        if ip not in LOOPBACK and not rate_limiter.allow(ip):
+            return openai_error(
+                429, "rate limit exceeded, try again in a minute", "rate_limit_error"
+            )
+        if not daily_cap.allow():
+            return openai_error(
+                429,
+                "the demo's daily request limit is used up, try again tomorrow (UTC)",
+                "rate_limit_error",
+            )
         if settings.override_model or not payload.get("model"):
             payload["model"] = settings.upstream_model
 

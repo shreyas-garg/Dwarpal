@@ -14,12 +14,27 @@ RUN uv sync --frozen --no-dev --all-extras --no-install-project
 COPY dwarpal ./dwarpal
 COPY policies ./policies
 COPY demo ./demo
+COPY scripts/fetch_models.py ./scripts/fetch_models.py
 RUN uv sync --frozen --no-dev --all-extras
+
+# PR-05: download every model the policies use into the image, so a cold start never fetches
+# one. Spaces run the container as uid 1000, so the cache must be readable by everyone.
+ENV HF_HOME=/app/.cache/huggingface
+RUN /app/.venv/bin/python scripts/fetch_models.py && chmod -R a+rX /app/.cache
 
 ARG GIT_SHA=dev
 ENV GIT_SHA=${GIT_SHA} \
     PORT=7860 \
-    PATH="/app/.venv/bin:$PATH"
+    PATH="/app/.venv/bin:$PATH" \
+    HF_HUB_OFFLINE=1 \
+    RATE_LIMIT_PER_MINUTE=20 \
+    DAILY_REQUEST_CAP=200 \
+    TRUST_FORWARDED_FOR=true
+
+# Same uid Spaces uses, so a local `docker run` behaves like the Space.
+RUN useradd -m -u 1000 user
+USER user
+ENV HOME=/home/user
 
 # Hugging Face Spaces expects port 7860.
 EXPOSE 7860
