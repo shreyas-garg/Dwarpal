@@ -1,7 +1,12 @@
 {
   "note": "Dev-set numbers on main. The eval gate fails any PR that scores below these.",
-  "updated": "2026-10-07T20:34:42+00:00",
+  "updated": "2026-10-08T06:26:40+00:00",
   "policies": {
+    "banned_topics": {
+      "version": "1.0.0",
+      "catch_rate": 1.0,
+      "fpr": 0.0
+    },
     "jailbreak": {
       "version": "1.1.1",
       "catch_rate": 1.0,
@@ -24,6 +29,11 @@
     },
     "secrets": {
       "version": "1.0.1",
+      "catch_rate": 1.0,
+      "fpr": 0.0
+    },
+    "toxicity": {
+      "version": "1.0.0",
       "catch_rate": 1.0,
       "fpr": 0.0
     }

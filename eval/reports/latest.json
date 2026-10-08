@@ -1,17 +1,34 @@
 {
-  "generated_at": "2026-10-07T20:34:42+00:00",
+  "generated_at": "2026-10-08T06:34:01+00:00",
   "policies": [
+    "banned_topics@1.0.0",
     "jailbreak@1.1.1",
     "max_length@1.0.0",
     "pii@1.0.1",
     "prompt_injection@1.1.1",
-    "secrets@1.0.1"
+    "secrets@1.0.1",
+    "toxicity@1.0.0"
   ],
   "suites": {
     "dev": {
-      "cases": 80,
+      "cases": 99,
       "skipped": {},
       "policies": {
+        "banned_topics": {
+          "policy": "banned_topics",
+          "version": "1.0.0",
+          "attacks": 6,
+          "catch_rate": 1.0,
+          "catch_ci": [
+            0.6097,
+            1.0
+          ],
+          "safe": 45,
+          "fpr": 0.0,
+          "p50_ms": 1.724,
+          "missed": [],
+          "false_positives": []
+        },
         "jailbreak": {
           "policy": "jailbreak",
           "version": "1.1.1",
@@ -21,9 +38,9 @@
             0.7225,
             1.0
           ],
-          "safe": 39,
+          "safe": 45,
           "fpr": 0.0,
-          "p50_ms": 24.184,
+          "p50_ms": 9.946,
           "missed": [],
           "false_positives": []
         },
@@ -33,9 +50,9 @@
           "attacks": 0,
           "catch_rate": null,
           "catch_ci": null,
-          "safe": 39,
+          "safe": 45,
           "fpr": 0.0,
-          "p50_ms": 0.012,
+          "p50_ms": 0.002,
           "missed": [],
           "false_positives": []
         },
@@ -48,9 +65,9 @@
             0.7225,
             1.0
           ],
-          "safe": 44,
+          "safe": 52,
           "fpr": 0.0,
-          "p50_ms": 0.143,
+          "p50_ms": 0.078,
           "missed": [],
           "false_positives": []
         },
@@ -63,9 +80,9 @@
             0.7225,
             1.0
           ],
-          "safe": 39,
+          "safe": 45,
           "fpr": 0.0,
-          "p50_ms": 24.019,
+          "p50_ms": 9.282,
           "missed": [],
           "false_positives": []
         },
@@ -78,37 +95,65 @@
             0.6097,
             1.0
           ],
-          "safe": 44,
+          "safe": 52,
           "fpr": 0.0,
-          "p50_ms": 0.025,
+          "p50_ms": 0.014,
+          "missed": [],
+          "false_positives": []
+        },
+        "toxicity": {
+          "policy": "toxicity",
+          "version": "1.0.0",
+          "attacks": 5,
+          "catch_rate": 1.0,
+          "catch_ci": [
+            0.5655,
+            1.0
+          ],
+          "safe": 7,
+          "fpr": 0.0,
+          "p50_ms": 9.391,
           "missed": [],
           "false_positives": []
         }
       },
       "end_to_end": {
-        "attacks": 36,
+        "attacks": 47,
         "catch_rate": 1.0,
         "catch_ci": [
-          0.9036,
+          0.9244,
           1.0
         ],
-        "safe": 44,
+        "safe": 52,
         "fpr": 0.0,
-        "added_latency_p50_ms": 49.018,
-        "added_latency_p95_ms": 97.786,
+        "added_latency_p50_ms": 29.07,
+        "added_latency_p95_ms": 54.449,
         "missed": [],
         "false_positives": []
       }
     },
     "holdout": {
-      "cases": 23,
+      "cases": 27,
       "skipped": {
-        "banned_topics": 2,
-        "toxicity": 2,
         "output_schema": 2,
         "faithfulness": 2
       },
       "policies": {
+        "banned_topics": {
+          "policy": "banned_topics",
+          "version": "1.0.0",
+          "attacks": 2,
+          "catch_rate": 1.0,
+          "catch_ci": [
+            0.3424,
+            1.0
+          ],
+          "safe": 11,
+          "fpr": 0.0,
+          "p50_ms": 1.737,
+          "missed": [],
+          "false_positives": []
+        },
         "jailbreak": {
           "policy": "jailbreak",
           "version": "1.1.1",
@@ -120,7 +165,7 @@
           ],
           "safe": 11,
           "fpr": 0.0,
-          "p50_ms": 24.142,
+          "p50_ms": 9.619,
           "missed": [],
           "false_positives": []
         },
@@ -132,7 +177,7 @@
           "catch_ci": null,
           "safe": 11,
           "fpr": 0.0,
-          "p50_ms": 0.014,
+          "p50_ms": 0.002,
           "missed": [],
           "false_positives": []
         },
@@ -147,7 +192,7 @@
           ],
           "safe": 15,
           "fpr": 0.0,
-          "p50_ms": 0.103,
+          "p50_ms": 0.078,
           "missed": [],
           "false_positives": []
         },
@@ -162,7 +207,7 @@
           ],
           "safe": 11,
           "fpr": 0.0,
-          "p50_ms": 23.946,
+          "p50_ms": 9.644,
           "missed": [],
           "false_positives": []
         },
@@ -177,22 +222,37 @@
           ],
           "safe": 15,
           "fpr": 0.0,
-          "p50_ms": 0.029,
+          "p50_ms": 0.013,
+          "missed": [],
+          "false_positives": []
+        },
+        "toxicity": {
+          "policy": "toxicity",
+          "version": "1.0.0",
+          "attacks": 2,
+          "catch_rate": 1.0,
+          "catch_ci": [
+            0.3424,
+            1.0
+          ],
+          "safe": 4,
+          "fpr": 0.0,
+          "p50_ms": 9.242,
           "missed": [],
           "false_positives": []
         }
       },
       "end_to_end": {
-        "attacks": 8,
+        "attacks": 12,
         "catch_rate": 1.0,
         "catch_ci": [
-          0.6756,
+          0.7575,
           1.0
         ],
         "safe": 15,
         "fpr": 0.0,
-        "added_latency_p50_ms": 47.39,
-        "added_latency_p95_ms": 113.316,
+        "added_latency_p50_ms": 29.813,
+        "added_latency_p95_ms": 50.955,
         "missed": [],
         "false_positives": []
       }
@@ -200,19 +260,19 @@
   },
   "robustness": {
     "base64": {
-      "attacks": 28,
-      "catch_rate": 0.7143
+      "attacks": 34,
+      "catch_rate": 0.5882
     },
     "leetspeak": {
-      "attacks": 28,
-      "catch_rate": 0.7143
+      "attacks": 34,
+      "catch_rate": 0.5882
     },
     "spaced": {
-      "attacks": 28,
-      "catch_rate": 0.7143
+      "attacks": 34,
+      "catch_rate": 0.5882
     }
   },
-  "cache_hits": 50,
+  "cache_hits": 656,
   "gate": {
     "ok": true,
     "failures": []
