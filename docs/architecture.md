@@ -23,9 +23,17 @@
    - allowed: the upstream response, possibly with redacted content;
    - blocked: an OpenAI-shaped completion with a refusal message and
      `finish_reason: "content_filter"`.
-   Headers: `X-Dwarpal-Request-Id`, `X-Dwarpal-Policies` (every active `name@version`), and
-   `X-Dwarpal-Blocked-By` when blocked. With `EXPOSE_TRACE=true` the body also carries a
-   `dwarpal` object with each guard's action, score, reason and latency.
+   Headers: `X-Dwarpal-Request-Id`, `X-Dwarpal-Policies` (every active `name@version`),
+   `X-Dwarpal-Added-Latency-Ms` (total minus the upstream call), and `X-Dwarpal-Blocked-By`
+   when blocked. With `EXPOSE_TRACE=true` the body also carries a `dwarpal` object with each
+   guard's action, score, reason and latency.
+7. PR-07: the finished trace is queued for telemetry and written in the background to the
+   SQLite request log (`data/requests.db`) and, when keys are set, to Langfuse: per-guard
+   decisions and times, upstream time and tokens, cost, added latency. Prompts are stored only
+   as a SHA-256 (`LOG_PROMPTS=false`). `GET /v1/dwarpal/stats?window=1h` and
+   `GET /v1/dwarpal/requests?limit=100` read it back behind `ADMIN_TOKEN`; the Streamlit
+   dashboard (`dashboard/app.py`) shows it. A request refused with 429 by the rate limits never
+   reaches the pipeline, so it is not logged.
 
 ## Components
 
@@ -40,6 +48,9 @@
 | `dwarpal/guards/base.py` | `Guard`, `GuardContext`, `GuardResult`, `Stage`, `Action` |
 | `dwarpal/guards/registry.py` | `@register` and auto-discovery of guard modules |
 | `dwarpal/testing/mock_upstream.py` | Fake LLM for tests, offline dev and load tests |
+| `dwarpal/telemetry/` | Request log (SQLite), cost per request (`config/pricing.yaml`), Langfuse traces, stats |
+| `dashboard/app.py` | Streamlit dashboard over the stats endpoints and the latest eval report |
+| `loadtest/` | Locust load test and `make bench` (`results/benchmarks.*`), the real-Gemini run |
 
 ## Policies
 
