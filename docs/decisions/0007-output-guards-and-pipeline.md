@@ -140,8 +140,13 @@ in mind.
 
 ## Notes for PR-07 (Kartik)
 
-- `GuardResult` has `cost_usd` (judge and repair calls) and `cached`; `PipelineTrace` has
-  `guard_cost_usd`. Cost per request is upstream usage plus `guard_cost_usd`.
-- `GET /v1/dwarpal/policies` now also reports `on_error` and `timeout_ms`.
-- `scripts/bench_pipeline.py` already runs the dev set against the mock with a stand-in judge;
-  reuse it or its numbers in the load test.
+Only what PR-07 cannot work without:
+
+1. **Cost per request = upstream `usage` + `trace.guard_cost_usd`.** The judge and the schema
+   repair put their cost on `GuardResult.cost_usd`; a result reused from the cache has
+   `cached: true` and costs 0.
+2. **Don't load-test against real Gemini.** The free-tier key allows ~20 judge calls a day per
+   model, then faithfulness fails open and the numbers are wrong. Do what
+   `scripts/bench_pipeline.py` does: mock upstream plus `set_llm(<stand-in>)` for the judge.
+3. **If the eval gate shows faithfulness 0.000 in CI, it is the Gemini daily quota, not code.**
+   Re-run the `gate` job the next day; decisions are cached in `eval/.cache` after that.
