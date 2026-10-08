@@ -226,7 +226,3 @@ requests a minute and the whole demo to 200 a day (`RATE_LIMIT_PER_MINUTE`,
 - English only, single tenant, no billing layer, no streaming (`stream=true` returns 400).
 - The demo app is trivial on purpose; the guardrails layer and its eval harness are the deliverable.
 - Free-tier deployment within a ~$20 budget.
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md).

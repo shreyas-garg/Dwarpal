@@ -130,16 +130,3 @@ normalised for these two guards: a user does not disguise their own email.
   both `ner.py` and `classifier.py`.
 - **The end-to-end eval counted shadow and restore results as catches.** It now counts only
   enforced catches (`eval/harness.py`).
-
-## Notes for the PRs after this one
-
-- **PR-05 (Om):** bake `dslim/distilbert-NER` and `Horizon-Labs/prompt-injection-guard-base`
-  (revisions in the policy files) into the image, and set `HF_HUB_OFFLINE=1` at run time.
-  The demo calls the proxy from 127.0.0.1, so a per-IP rate limit treats every demo visitor as
-  one client; the daily cap is what protects the budget there.
-- **PR-06 (Kartik):** pii is `tier: model`. `asyncio.to_thread` work can't be cancelled, so a
-  `timeout_ms` stops waiting but the inference keeps running. jailbreak and prompt_injection
-  run the same model on the same text; sharing one result halves their cost.
-- **PR-07 (Divyanshu):** a result with `restored: true` gave the user their own values back; it
-  is not a catch. `GuardContext.state` holds raw user values for one request, never log it.
-

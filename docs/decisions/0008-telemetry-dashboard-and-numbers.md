@@ -1,6 +1,6 @@
 # 0008: Telemetry, dashboard, load test and the final numbers
 
-**Status:** accepted · **Owner:** Kartik · **PR:** 07 (owner swapped with PR-06)
+**Status:** accepted · **Owner:** Kartik · **PR:** 07
 
 ## Decision
 
@@ -212,20 +212,3 @@ These are for the guard owners; PR-07 only measures.
 - **Move the CPU models** to a process pool, a second worker or a GPU, so the `model` tier
   really runs in parallel.
 - **Shed load with a 429** before the guards saturate, instead of letting timeouts fail closed.
-
-## Viva questions (PR-07)
-
-- *Why load-test against a mock upstream, and what does that number not tell you?* It isolates
-  Dwarpal's own overhead, repeatably and for free. It says nothing about end-to-end latency
-  (Gemini's own seconds), Gemini's rate limits and errors under load, real token counts, or the
-  network.
-- *Which guard dominates p99?* The two injection classifiers: 84 ms p99 on plain chat, and
-  1.9 s when they scan a context document. The judge adds 1.7 s, but only when context is sent.
-- *How is cost per request computed on a free tier?* Usage tokens × list price
-  (`config/pricing.yaml`, thinking tokens as output), plus what the judge and the schema repair
-  report for their own calls. The free tier bills $0, so list price is what makes the number
-  mean something.
-- *Why not log raw prompts, and what does that cost you when debugging?* The PII guard removes
-  personal data; logging it anyway would undo that. The hash still matches identical requests.
-  The cost: a false positive can't be read back from the log. You need the user's text, or
-  `LOG_PROMPTS=true` for a while, which logs the redacted text.

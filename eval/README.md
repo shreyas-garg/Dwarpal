@@ -61,19 +61,10 @@ Rules that matter more than the schema:
   fabricated value on a real vendor prefix (`sk_live_`, `ghp_`, `AKIA…`) trips GitHub push
   protection and blocks the whole repo. Use the Ledgerly-shaped `lg_live_…` instead.
 
-### Id ranges
+### Ids
 
-| Range | Owner |
-|---|---|
-| `safe-001` … `safe-018` | Harshit Sachan (PR-02) |
-| `safe-019` … `safe-026` | Harshit Goel (PR-03) |
-| `safe-027` … `safe-034` | Yash (PR-04) |
-| `safe-035` … `safe-042` | Om (PR-05) |
-| `safe-043` … `safe-050` | Divyanshu (PR-06) |
-| `safe-051` … `safe-060` | Yash (PR-04, account-data questions, numbers and dates) |
-| `hold-*` | Harshit Sachan only. Do not add or edit holdout cases. |
-
-Attack ids use a per-guard prefix (`inj-`, `jb-`, `pii-`, `sec-`, `topic-`, `tox-`, `schema-`,
+Safe cases are `safe-NNN` and holdout cases `hold-NNN`; holdout cases are never added to or
+edited after they were written. Attack ids use a per-guard prefix (`inj-`, `jb-`, `pii-`, `sec-`, `topic-`, `tox-`, `schema-`,
 `faith-`). The loader rejects a duplicate id, so a collision fails fast rather than silently
 dropping a case.
 
