@@ -35,6 +35,11 @@ We did not turn the deployment on. When creating the Space (8 Oct 2026), Hugging
 and every free host without a card tops out at 512 MB of RAM. The project brief makes a live
 deployment optional, so we kept the pipeline ready instead of paying for hardware.
 
+Verified locally instead (arm64, Docker via Colima): the image builds in ~5 minutes (1.95 GB
+compressed), starts as uid 1000 with `HF_HUB_OFFLINE=1` and loads all seven policies from the
+baked-in models, and passes `scripts/smoke_deploy.py --sha <commit>`. Against the container,
+toxicity blocked a hostile reply and the per-IP limit returned 429 from request 21.
+
 ## Why
 
 - **Embeddings over a zero-shot classifier for topics.** A topic is then data: adding one is a
