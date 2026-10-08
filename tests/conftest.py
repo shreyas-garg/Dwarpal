@@ -69,6 +69,15 @@ def _reset_mock() -> None:
     MockState.reset()
 
 
+# PR-07: every app a test starts logs requests to its own temp database, never to data/, and
+# never to a Langfuse project that the developer's shell happens to point at.
+@pytest.fixture(autouse=True)
+def _telemetry_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("REQUEST_DB", str(tmp_path / "requests.db"))
+    for name in ("LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY", "ADMIN_TOKEN", "LOG_PROMPTS"):
+        monkeypatch.delenv(name, raising=False)
+
+
 # PR-06: guards that call an LLM (faithfulness, output_schema repair) get this instead.
 
 

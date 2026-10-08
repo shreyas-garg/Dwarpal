@@ -1,7 +1,7 @@
 """Runs input guards, calls the upstream model, then runs output guards.
 
 The first BLOCK stops the request; a REDACT replaces the text and later guards see the
-redacted version. (PR-07 adds telemetry.)
+redacted version. PR-07: every finished trace goes to dwarpal/telemetry.
 
 PR-06: how a stage's guards are scheduled, chosen by PIPELINE_STRATEGY (see docs/tradeoffs.md):
 
@@ -34,6 +34,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Literal
 
+from dwarpal import telemetry
 from dwarpal.guards.base import Action, Guard, GuardContext, GuardResult, Stage
 from dwarpal.guards.registry import get_guard_class
 from dwarpal.policy import Policy
@@ -217,6 +218,7 @@ class Pipeline:
 
         if await self._run_stage(Stage.INPUT, ctx, trace):
             trace.total_latency_ms = _ms_since(start)
+            await telemetry.record(trace, ctx)  # PR-07
             return trace
 
         payload["messages"] = ctx.messages  # forward the redacted version
@@ -233,6 +235,7 @@ class Pipeline:
                 _set_response_text(response, ctx.response_text)
 
         trace.total_latency_ms = _ms_since(start)
+        await telemetry.record(trace, ctx)  # PR-07
         return trace
 
     # PR-04: run one stage's guards with no upstream call. The demo's "check a model reply"

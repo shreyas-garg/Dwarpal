@@ -13,6 +13,7 @@ RUN uv sync --frozen --no-dev --all-extras --no-install-project
 
 COPY dwarpal ./dwarpal
 COPY policies ./policies
+COPY config ./config
 COPY demo ./demo
 COPY scripts/fetch_models.py ./scripts/fetch_models.py
 RUN uv sync --frozen --no-dev --all-extras
@@ -32,7 +33,8 @@ ENV GIT_SHA=${GIT_SHA} \
     TRUST_FORWARDED_FOR=true
 
 # Same uid Spaces uses, so a local `docker run` behaves like the Space.
-RUN useradd -m -u 1000 user
+# PR-07: the request log (data/requests.db) needs a directory that user can write.
+RUN useradd -m -u 1000 user && mkdir -p /app/data && chown user /app/data
 USER user
 ENV HOME=/home/user
 

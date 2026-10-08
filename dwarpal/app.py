@@ -17,6 +17,7 @@ from dwarpal.limits import LOOPBACK, DailyCap, RateLimiter, client_ip
 from dwarpal.llm import LLMClient, set_llm
 from dwarpal.pipeline import Pipeline, PipelineTrace
 from dwarpal.policy import load_policies
+from dwarpal.telemetry import Telemetry, parse_window
 from dwarpal.upstream import UpstreamClient, UpstreamError
 
 log = logging.getLogger("dwarpal")
@@ -82,8 +83,12 @@ def create_app(
         )
         await pipeline.setup()
         app.state.pipeline = pipeline
+        # PR-07: request log (and Langfuse, with keys), written in the background.
+        app.state.telemetry = Telemetry.from_settings(settings)
+        await app.state.telemetry.start()
         log.info("dwarpal ready with policies: %s", ", ".join(pipeline.policy_refs) or "none")
         yield
+        await app.state.telemetry.stop()  # PR-07: writes what is still queued
         set_llm(None)
         await llm.aclose()
         await upstream.aclose()
@@ -137,6 +142,42 @@ def create_app(
                 for p in pipeline.policies
             ],
         }
+
+    # PR-07: the request log, for the dashboard. Admin only: ADMIN_TOKEN in an X-Admin-Token
+    # header; with no ADMIN_TOKEN configured both endpoints are off.
+    def check_admin(request: Request) -> JSONResponse | None:
+        token = settings.admin_token.get_secret_value()
+        if not token:
+            return openai_error(403, "admin endpoints are off: set ADMIN_TOKEN", "permission_error")
+        sent = request.headers.get("x-admin-token", "")
+        if not secrets.compare_digest(sent.encode(), token.encode()):
+            return openai_error(401, "invalid admin token", "authentication_error")
+        return None
+
+    @app.get("/v1/dwarpal/stats")
+    async def stats(request: Request, window: str = "1h") -> Any:
+        if (denied := check_admin(request)) is not None:
+            return denied
+        try:
+            window_s = parse_window(window)
+        except ValueError as exc:
+            return openai_error(400, str(exc))
+        pipeline: Pipeline = request.app.state.pipeline
+        return {
+            "window": window,
+            **await request.app.state.telemetry.stats(window_s),
+            "active_policies": [
+                {"ref": p.ref, "mode": p.mode, "tier": p.tier, "stages": list(p.stages)}
+                for p in pipeline.policies
+            ],
+        }
+
+    @app.get("/v1/dwarpal/requests")
+    async def request_log(request: Request, limit: int = 100) -> Any:
+        if (denied := check_admin(request)) is not None:
+            return denied
+        rows = await request.app.state.telemetry.recent(min(max(limit, 1), 1000))
+        return {"requests": rows}
 
     @app.get("/v1/models")
     async def models(request: Request) -> Any:
@@ -193,6 +234,7 @@ def create_app(
         headers = {
             "X-Dwarpal-Request-Id": request_id,
             "X-Dwarpal-Policies": ",".join(trace.policies),
+            "X-Dwarpal-Added-Latency-Ms": f"{trace.added_latency_ms:.1f}",  # PR-07
         }
         if trace.blocked_by:
             headers["X-Dwarpal-Blocked-By"] = trace.blocked_by
