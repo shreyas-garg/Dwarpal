@@ -1,0 +1,78 @@
+# Banned topics: advice a Ledgerly support bot must not give. Each topic is a name, a one-line
+# description (for humans) and example phrasings; a message whose cosine similarity to any
+# example reaches the threshold is blocked. Keywords are an optional exact first check for
+# phrasings with no innocent reading. See docs/decisions/0006.
+# Adding a topic or phrasing is a policy change: bump the version and add a changelog line.
+name: banned_topics
+version: 1.0.0
+guard: banned_topics
+stages: [input]
+enabled: true
+mode: enforce
+action: block
+threshold: 0.48           # min cosine similarity; dev attacks >= 0.50, hard negatives <= 0.46
+tier: model
+on_error: fail_closed
+timeout_ms: 2000
+params:
+  embedder:
+    model: sentence-transformers/all-MiniLM-L6-v2
+    revision: 1110a243fdf4706b3f48f1d95db1a4f5529b4d41
+  topics:
+    - name: medical_advice
+      description: Diagnosis, medication, dosage or treatment advice.
+      examples:
+        - How much ibuprofen should I take for a headache?
+        - What medicine should I take for chest pain?
+        - Is this lump on my neck cancer?
+        - Should I stop taking my blood pressure tablets?
+        - What dose of paracetamol is safe for my child?
+        - Can I drink alcohol while on antibiotics?
+        - What is the best treatment for my diabetes?
+    - name: legal_advice
+      description: Advice on lawsuits, criminal matters, contracts or court cases.
+      examples:
+        - Can I sue my client for breach of contract?
+        - How do I win my court case against my landlord?
+        - Is my employment contract legally enforceable?
+        - What should I tell the police if I get arrested?
+        - Can I legally get out of my non-compete agreement?
+        - How do I avoid paying alimony in my divorce?
+        - Will I go to jail if I ignore this court summons?
+    - name: investment_advice
+      description: What to buy, sell or invest in, including crypto, stocks and property.
+      examples:
+        - Should I buy Tesla shares right now?
+        - Which mutual funds will give me the best returns?
+        - Is gold a better investment than fixed deposits this year?
+        - Which cryptocurrency will go up next month?
+        - How should I invest my bonus so I can retire early?
+        - Should I put my savings into the stock market?
+        - Which stocks should I buy this month?
+        - Is now a good time to buy real estate as an investment?
+      keywords:
+        - '\b(which|what)\s+(stocks?|shares|coins?|crypto(currenc(y|ies))?)\s+should\s+i\s+(buy|invest|put)\b'
+    - name: politics_elections
+      description: Opinions on parties, candidates, leaders or elections.
+      examples:
+        - Who should I vote for in the next election?
+        - Which political party is best for the country?
+        - Is the prime minister doing a good job?
+        - Write a campaign speech supporting this candidate.
+        - Were the last election results rigged?
+        - Give me your opinion on the opposition leader.
+      keywords:
+        - '\bwho\s+should\s+(i|we)\s+vote\s+for\b'
+    - name: weapons
+      description: Making, buying or using weapons or explosives.
+      examples:
+        - How do I make a gun at home?
+        - Where can I buy a pistol without a licence?
+        - How do I build a bomb?
+        - How do I make explosives from fertiliser?
+        - Which knife is best for stabbing someone?
+        - How can I convert a replica gun to fire real bullets?
+      keywords:
+        - '\b(make|build|assemble)\s+(a\s+|an\s+)?(pipe\s*)?(bomb|explosives?|ied)\b'
+changelog:
+  - "1.0.0: five topics, all-MiniLM-L6-v2 similarity at 0.48 plus keyword first check (docs/decisions/0006)"

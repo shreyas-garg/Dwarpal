@@ -1,0 +1,40 @@
+name: deploy
+
+# PR-05: every push to main goes to the Hugging Face Space, then a smoke test checks that the
+# Space serves that exact commit and that its guards allow / block as expected.
+# Needs a repo secret HF_TOKEN (write access) and a repo variable HF_SPACE (<owner>/<space>).
+# Until HF_SPACE is set the job is skipped, so forks and fresh clones stay green.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: true  # a newer commit supersedes a deploy still waiting on its build
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: vars.HF_SPACE != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Push to the Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          uv run --no-project --with huggingface-hub \
+            python scripts/deploy_space.py --space "${{ vars.HF_SPACE }}" --sha "$GITHUB_SHA"
+
+      # The Space rebuilds the image (models included) before /healthz shows the new SHA.
+      - name: Smoke test
+        run: |
+          uv run --no-project --with httpx \
+            python scripts/smoke_deploy.py --space "${{ vars.HF_SPACE }}" --sha "$GITHUB_SHA" --timeout 1800

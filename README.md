@@ -7,7 +7,7 @@ PII/secret leaks and claims unsupported by the supplied context. Every check is 
 policy, scored separately against a hand-written red-team set in CI, so a drop in catch rate or a
 rise in false positives blocks the merge.
 
-> Live demo: _TBD (PR-05)_ · Dashboard: _TBD (PR-07)_
+> Live demo: deploy-ready, not hosted (see [Deploy](#deploy)); runs locally in two commands or one `docker run` · Dashboard: _TBD (PR-07)_
 
 ## Problem
 
@@ -42,7 +42,7 @@ More detail: [docs/architecture.md](docs/architecture.md).
 | max_length (reference) | input | `policies/max_length.yaml` | ✅ |
 | prompt_injection, jailbreak | input | `policies/prompt_injection.yaml`, `policies/jailbreak.yaml` | ✅ |
 | pii, secrets | input + output | `policies/pii.yaml`, `policies/secrets.yaml` | ✅ |
-| banned_topics, toxicity | input / output | PR-05 | ⏳ |
+| banned_topics, toxicity | input / output | `policies/banned_topics.yaml`, `policies/toxicity.yaml` | ✅ |
 | output_schema, faithfulness | output | PR-06 | ⏳ |
 
 ## Results
@@ -96,6 +96,39 @@ print(r.choices[0].message.content, r.choices[0].finish_reason)
 ```
 
 `make lint test` runs what CI runs.
+
+## Deploy
+
+**Deploy-ready; not hosted.** The deployment infrastructure is built and tested end to end. The
+only missing piece is hosting: Hugging Face now requires a PRO plan for the free CPU Space tier,
+and free hosts without a card (Render, Koyeb) give 512 MB of RAM, less than the guard models
+need. A live URL is optional for this project, so we did not pay for one. Turning it on is
+configuration only, no code changes.
+
+What is ready and tested:
+
+- **Image:** `Dockerfile` bakes every model in at build time (`scripts/fetch_models.py`), runs
+  offline (`HF_HUB_OFFLINE=1`) as a non-root user (uid 1000, as on Spaces), and stamps the
+  commit SHA into `/healthz`. Built and run locally: ~5 min build, 1.95 GB image.
+- **Pipeline:** `.github/workflows/deploy.yml` pushes `main` to a Hugging Face Docker Space
+  (`scripts/deploy_space.py`), then `scripts/smoke_deploy.py` waits for the Space to report that
+  commit and checks a safe request is answered while an injection and a banned topic are
+  blocked. The smoke test passes against the local container.
+- **Budget limits:** see below.
+
+Run the image yourself:
+
+```bash
+docker build -t dwarpal .
+docker run -p 7860:7860 -e UPSTREAM_API_KEY=<gemini key> dwarpal   # http://localhost:7860/demo
+```
+
+To go live, set a repo secret `HF_TOKEN` (write token), a repo variable `HF_SPACE`
+(`<owner>/<space>`, on an account with CPU Spaces), and the Space secret `UPSTREAM_API_KEY`;
+until then the deploy job skips itself. The image limits each IP to 20
+requests a minute and the whole demo to 200 a day (`RATE_LIMIT_PER_MINUTE`,
+`DAILY_REQUEST_CAP`, overridable as Space variables). Details:
+[docs/decisions/0006](docs/decisions/0006-content-guards-and-deployment.md).
 
 ## Scope
 
