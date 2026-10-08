@@ -3,7 +3,7 @@
 # examples below. Either layer crossing its threshold blocks the reply. See docs/decisions/0006.
 # Any change here is a policy change: bump the version and add a changelog line.
 name: toxicity
-version: 1.0.0
+version: 1.1.0
 guard: toxicity
 stages: [output]
 enabled: true
@@ -11,7 +11,7 @@ mode: enforce
 action: block
 threshold: 0.50           # default for any label not listed under params.labels
 tier: model
-on_error: fail_closed
+on_error: fail_open       # PR-06: a crashed tone check must not take the bot down (docs/decisions/0007)
 timeout_ms: 3000
 params:
   model:
@@ -42,3 +42,4 @@ params:
       - Pay up or you'll regret it, and we know where your office is.
 changelog:
   - "1.0.0: toxic-bert (int8 ONNX) with per-label thresholds, plus a contempt similarity layer (docs/decisions/0006)"
+  - "1.1.0: on_error fail_open, now that PR-06 enforces timeouts: a slow or crashed model allows the reply instead of refusing it (docs/decisions/0007)"
