@@ -12,7 +12,7 @@ whether every decision (blocked by, forwarded input, final reply) matches the se
 The decision cache is off, so every request runs every guard it reaches.
 
   uv run python scripts/bench_pipeline.py                # all three, 3 rounds
-  uv run python scripts/bench_pipeline.py --rounds 5 --judge-ms 900 --out results/x.json
+  uv run python scripts/bench_pipeline.py --faq-context --out results/pipeline_strategies_faq.json
 """
 
 from __future__ import annotations
@@ -101,6 +101,14 @@ async def run_strategy(strategy, policies, cases, judge, rounds) -> dict[str, An
 async def main(args) -> dict[str, Any]:
     policies = load_policies(ROOT / "policies")
     cases = load_dataset(ROOT / "eval" / "datasets" / "redteam.jsonl").cases
+    if args.faq_context:
+        # Every reply checked against the FAQ, as the demo can send it: now an output guard
+        # that blocks early (secrets, toxicity) can save the judge call.
+        faq = (ROOT / "demo" / "ledgerly_faq.md").read_text(encoding="utf-8")
+        cases = [
+            c.model_copy(update={"context": [faq]}) if c.stage == "output" and not c.context else c
+            for c in cases
+        ]
     judge = StandInJudge(args.judge_ms, args.prompt_tokens, args.completion_tokens)
     set_llm(judge)
 
@@ -117,6 +125,7 @@ async def main(args) -> dict[str, Any]:
         "policies": [p.ref for p in policies],
         "cases": len(cases),
         "attacks": sum(c.label == "attack" for c in cases),
+        "faq_context_on_every_reply": args.faq_context,
         "judge_stand_in": {
             "latency_ms": args.judge_ms,
             "prompt_tokens": args.prompt_tokens,
@@ -154,9 +163,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--strategies", nargs="+", default=list(STRATEGIES), choices=STRATEGIES)
     parser.add_argument("--rounds", type=int, default=3)
-    parser.add_argument("--judge-ms", type=float, default=900.0)
+    parser.add_argument("--judge-ms", type=float, default=1700.0)  # measured p50, 3.5 Flash-Lite
     parser.add_argument("--prompt-tokens", type=int, default=700)
     parser.add_argument("--completion-tokens", type=int, default=120)
+    parser.add_argument("--faq-context", action="store_true", help="send the FAQ with every reply")
     parser.add_argument("--out", type=Path, default=ROOT / "results" / "pipeline_strategies.json")
     args = parser.parse_args()
 
