@@ -33,6 +33,7 @@ _SENTENCES = re.compile(r"(?<=[.?!])\s+|\n+")
 @register("toxicity")
 class ToxicityGuard(Guard):
     stages = frozenset({Stage.OUTPUT})
+    cacheable = True  # PR-06: pure function of the text, safe to reuse per version
 
     def __init__(self, policy):
         super().__init__(policy)

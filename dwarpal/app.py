@@ -14,6 +14,7 @@ from fastapi.responses import JSONResponse
 from dwarpal import __version__
 from dwarpal.config import Settings, get_settings
 from dwarpal.limits import LOOPBACK, DailyCap, RateLimiter, client_ip
+from dwarpal.llm import LLMClient, set_llm
 from dwarpal.pipeline import Pipeline, PipelineTrace
 from dwarpal.policy import load_policies
 from dwarpal.upstream import UpstreamClient, UpstreamError
@@ -69,11 +70,22 @@ def create_app(
             settings.upstream_timeout_s,
             transport=upstream_transport,
         )
-        pipeline = Pipeline(policies, upstream)
+        # PR-06: guards that call a model (faithfulness judge, schema repair) share the
+        # upstream endpoint and key, through a client this app owns and closes.
+        llm = LLMClient.from_settings(settings, transport=upstream_transport)
+        set_llm(llm)
+        pipeline = Pipeline(
+            policies,
+            upstream,
+            strategy=settings.pipeline_strategy,
+            cache_size=settings.guard_cache_size,
+        )
         await pipeline.setup()
         app.state.pipeline = pipeline
         log.info("dwarpal ready with policies: %s", ", ".join(pipeline.policy_refs) or "none")
         yield
+        set_llm(None)
+        await llm.aclose()
         await upstream.aclose()
 
     app = FastAPI(title="Dwarpal", version=__version__, lifespan=lifespan)
@@ -119,6 +131,8 @@ def create_app(
                     "action": p.action.value,
                     "threshold": p.threshold,
                     "tier": p.tier,
+                    "on_error": p.on_error,  # PR-06
+                    "timeout_ms": p.timeout_ms,
                 }
                 for p in pipeline.policies
             ],
