@@ -168,15 +168,21 @@ What the numbers say:
   the text, which it does for the FAQ's markdown. That is four classifier passes for a 2 KB
   document: about 0.9 s per guard alone and 1.9 s with both running. From 10 users they time
   out and every grounded request is refused.
-- **Cost per request** at list price, with the mock's token counts: $0.00006 for a plain
-  request, $0.00038 when the judge checks the reply. Dwarpal's own cost is only its model calls:
-  $0 on a plain request, and about $0.0004–0.0005 per judged reply against real Gemini
+- **Cost per request: TBD**, pending the real Gemini run. Dwarpal's own cost is only its model
+  calls: $0 on a plain request, and about $0.0004–0.0005 per judged reply against real Gemini
   ([0007](0007-output-guards-and-pipeline.md)).
 
-**Real run.** `loadtest/real_run.py` (50 requests to Gemini through the proxy, no context) is
-built and tested against the mock, but it was not run for this note: it needs a Gemini key with
-quota, since the free tier allows about 20 requests a day per model. Its output,
-`results/real_run.md`, gives true end-to-end latency and cost per request with real token counts.
+**Real run: TBD.** `loadtest/real_run.py` (50 requests to Gemini through the proxy, no context)
+is built and tested against the mock. It has not run against Gemini yet: the key's prepaid
+credits were used up (402). It writes `results/real_run.md` with end-to-end latency and cost per
+request. Note also that `gemini-2.5-flash` answers new API keys with 404 ("no longer available
+to new users"), so `.env.example` now uses `gemini-3.5-flash-lite`.
+
+**Checked end to end** with the Docker image (`docker run --env-file .env`, port 7860):
+
+- requests blocked by the guards show up in the request log and the dashboard;
+- each one appears as a trace in Langfuse Cloud, tagged with the 9 policy versions, with one
+  observation per guard.
 
 ## Consequences and known limits
 
@@ -186,13 +192,12 @@ quota, since the free tier allows about 20 requests a day per model. Its output,
 - **Not every request is logged.** 429s from the rate limits and upstream errors never produce a
   trace, so the log and the dashboard don't include them.
 - **Langfuse timeline.** The pipeline measures durations, not start times, so span starts are
-  reconstructed. Durations are exact; guards that ran at the same time appear one after another.
+  reconstructed. Durations are exact, and each stage's guards are drawn side by side from the
+  stage's start, so the trace's total matches the request.
 - **Machine-specific numbers.** The load generator, the mock and the proxy share one laptop.
   Compare scenarios with each other, not with other machines.
 - **The judge stand-in is fast.** It answers in 300 ms; the real judge's p50 is 1.7 s
   ([0007](0007-output-guards-and-pipeline.md)).
-- **Mock token counts.** The mock counts four characters as a token and answers in one sentence,
-  so the load-test costs show the arithmetic, not a real bill; the real run has real counts.
 - **Overload refuses safe traffic.** This follows from the timeouts and `fail_closed` above.
   Nothing in the proxy sheds load before the guards saturate; only the per-IP limit of the
   deployed image comes close.
