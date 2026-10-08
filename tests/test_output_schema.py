@@ -75,7 +75,7 @@ async def test_broken_reply_is_repaired_once(fake_llm):
     (call,) = llm.calls
     prompt = call["messages"][-1]["content"]
     assert json.dumps(PLAN) in prompt and "price_inr: 499," in prompt and "not valid JSON" in prompt
-    assert call["temperature"] == 0 and call["reasoning_effort"] == "none"
+    assert call["temperature"] == 0 and call["reasoning_effort"] == "minimal"
     assert result.cost_usd == pytest.approx((1000 * 0.30 + 200 * 2.50) / 1e6)
 
 
