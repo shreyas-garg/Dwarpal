@@ -9,8 +9,8 @@ Each team member raises **one PR**, merged in this order:
 | 03 | Harshit Goel | Prompt injection + jailbreak guards, policy versioning, shadow mode |
 | 04 | Yash | PII + secrets guards, demo app |
 | 05 | Om | Banned topics + toxicity guards, deployment to HF Spaces |
-| 06 | Kartik | Output schema + faithfulness guards, faster pipeline |
-| 07 | Divyanshu | Telemetry, dashboard, load test, final numbers in README |
+| 06 | Divyanshu | Output schema + faithfulness guards, faster pipeline |
+| 07 | Kartik | Telemetry, dashboard, load test, final numbers in README |
 
 PRs 03–06 can be written in parallel once 02 has merged, but merge in number order.
 

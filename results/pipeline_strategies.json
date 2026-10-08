@@ -1,0 +1,56 @@
+{
+  "policies": [
+    "banned_topics@1.0.0",
+    "faithfulness@1.0.0",
+    "jailbreak@1.1.1",
+    "max_length@1.0.0",
+    "output_schema@1.0.0",
+    "pii@1.0.1",
+    "prompt_injection@1.1.1",
+    "secrets@1.0.1",
+    "toxicity@1.1.0"
+  ],
+  "cases": 116,
+  "attacks": 56,
+  "judge_stand_in": {
+    "latency_ms": 900.0,
+    "prompt_tokens": 700,
+    "completion_tokens": 120
+  },
+  "machine": {
+    "platform": "Windows-10-10.0.26300-SP0",
+    "processor": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+    "cpus": 16,
+    "python": "3.11.9"
+  },
+  "generated_at": "2026-10-08T17:43:27+0530",
+  "strategies": {
+    "sequential": {
+      "requests": 348,
+      "added_latency_p50_ms": 85.347,
+      "added_latency_p99_ms": 1123.748,
+      "added_latency_mean_ms": 199.677,
+      "judge_calls_per_request": 0.1207,
+      "guard_cost_per_request_usd": 6.155172413793104e-05,
+      "decisions_differ_from_sequential": []
+    },
+    "tiered": {
+      "requests": 348,
+      "added_latency_p50_ms": 75.665,
+      "added_latency_p99_ms": 1227.777,
+      "added_latency_mean_ms": 1197.349,
+      "judge_calls_per_request": 0.1207,
+      "guard_cost_per_request_usd": 6.155172413793104e-05,
+      "decisions_differ_from_sequential": []
+    },
+    "parallel": {
+      "requests": 348,
+      "added_latency_p50_ms": 123.323,
+      "added_latency_p99_ms": 1183.943,
+      "added_latency_mean_ms": 242.605,
+      "judge_calls_per_request": 0.1207,
+      "guard_cost_per_request_usd": 6.155172413793104e-05,
+      "decisions_differ_from_sequential": []
+    }
+  }
+}
