@@ -12,7 +12,7 @@ import logging
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
@@ -40,6 +40,8 @@ class EvalCase(BaseModel):
     input: str
     context: list[str] = Field(default_factory=list)  # supplied docs, for faithfulness
     response: str | None = None  # canned reply, so output cases never call the model
+    # PR-06: the JSON Schema the request asked for, sent as dwarpal.response_schema.
+    response_schema: dict[str, Any] | None = None
     notes: str = ""
 
     @model_validator(mode="after")

@@ -81,12 +81,44 @@ def test_duplicate_ids_are_rejected(tmp_path):
 
 
 def test_cases_for_unregistered_guards_are_skipped(tmp_path, caplog):
-    future = {**ATTACK, "id": "x-003", "target_guard": "faithfulness", "context": ["a"]}
+    # PR-06 registered faithfulness, the last guard in the plan, so this one is made up.
+    future = {**ATTACK, "id": "x-003", "target_guard": "not_written_yet"}
     dataset = load_dataset(write_jsonl(tmp_path / "d.jsonl", SAFE, future))
 
     assert [c.id for c in dataset.cases] == ["x-001"]
-    assert dataset.skipped == {"faithfulness": 1}
-    assert "faithfulness" in caplog.text
+    assert dataset.skipped == {"not_written_yet": 1}
+    assert "not_written_yet" in caplog.text
+
+
+def test_response_schema_reaches_the_guard_and_the_proxy():
+    """PR-06: an output_schema case's schema is in the guard's context and the request body."""
+    from eval.harness import _context_for, _payload_for
+
+    schema = {"type": "object", "required": ["plan"]}
+    case = EvalCase.model_validate(
+        {
+            **ATTACK,
+            "stage": "output",
+            "target_guard": "output_schema",
+            "response": "{}",
+            "response_schema": schema,
+        }
+    )
+    assert _context_for(case).response_schema == schema
+    assert _payload_for(case)["dwarpal"] == {"response_schema": schema}
+
+
+async def test_errored_decisions_are_not_cached(cache):
+    """PR-06: a guard that crashed has not decided anything; the next run must retry it."""
+    crashy = Policy.model_validate(
+        {"name": "crashy", "version": "0.1.0", "guard": "test_crash", "stages": ["input"]}
+    )
+    import tests.conftest  # noqa: F401  registers test_crash
+
+    case = EvalCase.model_validate({**ATTACK, "target_guard": "test_crash"})
+    score = await score_policy(crashy, [case], cache)
+    assert score.catch_rate == 1.0  # fail_closed counts as a block...
+    assert list(cache.directory.iterdir()) == []  # ...but is not remembered
 
 
 def test_repo_datasets_load():
@@ -96,8 +128,9 @@ def test_repo_datasets_load():
     # PR-02 shipped 18 safe cases; PR-03 added 8 hard negatives and 20 input attacks;
     # PR-04 added 18 hard negatives (13 input, 5 output) and 16 pii / secrets attacks.
     # PR-05 added 8 hard negatives (6 input, 2 output) and 11 banned-topic / toxicity attacks.
-    assert len(dev.safe) == 52
-    assert len(dev.attacks) == 47
+    # PR-06 added 8 output hard negatives and 9 output_schema / faithfulness attacks.
+    assert len(dev.safe) == 60
+    assert len(dev.attacks) == 56
     assert {c.target_guard for c in dev.attacks} == {
         "prompt_injection",
         "jailbreak",
@@ -105,10 +138,18 @@ def test_repo_datasets_load():
         "secrets",
         "banned_topics",
         "toxicity",
+        "output_schema",
+        "faithfulness",
     }
     assert len(holdout.safe) == 15
     assert sum(holdout.skipped.values()) + len(holdout.attacks) == 16
-    assert {c.author for c in dev.cases} == {"harshit-sachan", "harshit-goel", "yash", "om"}
+    assert {c.author for c in dev.cases} == {
+        "harshit-sachan",
+        "harshit-goel",
+        "yash",
+        "om",
+        "divyanshu",
+    }
 
 
 async def test_score_policy_separates_catch_rate_from_false_positives(cache):

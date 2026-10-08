@@ -15,6 +15,7 @@ uv run python -m eval.harness --update-baseline
 |---|---|
 | `datasets/redteam.jsonl` | Shared dev set. Gates the merge. Guard owners add their cases here. |
 | `datasets/holdout.jsonl` | Written in PR-02 before any guard existed. Reported, never gated. |
+| `datasets/judge_check.jsonl` | PR-06: 10 hand-labelled replies for `scripts/check_judge.py`. Not scored by `make eval`. |
 | `schema.py` | The case model and the dataset loader. |
 | `harness.py` | Scoring, the gate, the CLI. |
 | `augment.py` | base64 / leetspeak / spaced-out copies of the attacks. |
@@ -44,6 +45,7 @@ One JSON object per line. Lines starting with `#` are comments.
 | `input` | The user turn. |
 | `context` | Supplied documents. Required when `target_guard` is `faithfulness`. |
 | `response` | Canned model reply. Required for every `output` case. |
+| `response_schema` | JSON Schema the request asked for, sent as `dwarpal.response_schema`. Optional; `output_schema` cases carry one. |
 | `notes` | Why this case exists and what it is trying to defeat. |
 
 Rules that matter more than the schema:
@@ -67,7 +69,7 @@ Rules that matter more than the schema:
 | `safe-019` … `safe-026` | Harshit Goel (PR-03) |
 | `safe-027` … `safe-034` | Yash (PR-04) |
 | `safe-035` … `safe-042` | Om (PR-05) |
-| `safe-043` … `safe-050` | Kartik (PR-06) |
+| `safe-043` … `safe-050` | Divyanshu (PR-06) |
 | `safe-051` … `safe-060` | Yash (PR-04, account-data questions, numbers and dates) |
 | `hold-*` | Harshit Sachan only. Do not add or edit holdout cases. |
 
