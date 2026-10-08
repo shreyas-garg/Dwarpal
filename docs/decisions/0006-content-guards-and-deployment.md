@@ -116,14 +116,3 @@ are still missed.
   Space; a second replica would need shared state.
 - The demo calls the proxy from 127.0.0.1, so it is exempt from the per-IP limit and bounded
   only by the daily cap.
-
-## Notes for the PRs after this one
-
-- **PR-06 (Kartik):** banned_topics and the toxicity contempt layer share one MiniLM instance
-  (`get_embedder` is a per-process singleton). If faithfulness needs sentence embeddings,
-  reuse it. Both new guards are `tier: model`.
-- **PR-06 / PR-07:** if anyone gets an account with CPU Spaces, deploys become automatic from
-  `main` once `HF_SPACE` and `HF_TOKEN` are set in the GitHub repo. A new model in a policy file is picked up by `fetch_models.py` with no
-  Dockerfile change.
-- **PR-07 (Divyanshu):** a 429 from the limits never reaches the pipeline, so it has no trace;
-  count it from the response status if the dashboard should show it.

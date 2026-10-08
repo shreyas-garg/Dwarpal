@@ -1,6 +1,6 @@
 # 0007: Output schema and faithfulness guards, and a faster pipeline
 
-**Status:** accepted · **Owner:** Divyanshu · **PR:** 06 (owner swapped with PR-07)
+**Status:** accepted · **Owner:** Divyanshu · **PR:** 06
 
 ## Decision
 
@@ -137,16 +137,3 @@ in mind.
   sit in an earlier tier.
 - The decision cache is per process and in memory; it is lost on restart and not shared
   between replicas.
-
-## Notes for PR-07 (Kartik)
-
-Only what PR-07 cannot work without:
-
-1. **Cost per request = upstream `usage` + `trace.guard_cost_usd`.** The judge and the schema
-   repair put their cost on `GuardResult.cost_usd`; a result reused from the cache has
-   `cached: true` and costs 0.
-2. **Don't load-test against real Gemini.** The free-tier key allows ~20 judge calls a day per
-   model, then faithfulness fails open and the numbers are wrong. Do what
-   `scripts/bench_pipeline.py` does: mock upstream plus `set_llm(<stand-in>)` for the judge.
-3. **If the eval gate shows faithfulness 0.000 in CI, it is the Gemini daily quota, not code.**
-   Re-run the `gate` job the next day; decisions are cached in `eval/.cache` after that.
