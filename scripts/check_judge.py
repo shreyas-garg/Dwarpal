@@ -29,7 +29,7 @@ from dwarpal.policy import load_policy_file  # noqa: E402
 from eval.schema import load_dataset  # noqa: E402
 
 
-async def main(dataset: Path) -> int:
+async def main(dataset: Path, gap_s: float = 0.0) -> int:
     if "holdout" in dataset.name:
         raise SystemExit("holdout cases are not scored while tuning (eval/README.md)")
     policy = load_policy_file(ROOT / "policies" / "faithfulness.yaml")
@@ -39,7 +39,9 @@ async def main(dataset: Path) -> int:
     agree, latencies, cost = 0, [], 0.0
     print(f"{policy.ref}, threshold {policy.threshold}\n")
     print(f"{'case':<11} {'human':<7} {'judge':<7} {'score':>5}  reason")
-    for case in cases:
+    for i, case in enumerate(cases):
+        if i and gap_s:  # pause between calls instead of inside them, so latency is real
+            await asyncio.sleep(gap_s)
         ctx = GuardContext(
             messages=[{"role": "user", "content": case.input}],
             response_text=case.response,
@@ -69,4 +71,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--dataset", type=Path, default=ROOT / "eval" / "datasets" / "judge_check.jsonl"
     )
-    raise SystemExit(asyncio.run(main(parser.parse_args().dataset)))
+    parser.add_argument(
+        "--gap",
+        type=float,
+        default=0.0,
+        help="seconds between calls (free tier: 13, with GUARD_LLM_RPM=0)",
+    )
+    args = parser.parse_args()
+    raise SystemExit(asyncio.run(main(args.dataset, args.gap)))
