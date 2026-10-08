@@ -67,9 +67,15 @@ def live_section(stats: dict[str, Any], rows: list[dict[str, Any]], colors: tupl
     )
     tiles[3].metric("Added latency p99", ms(added["p99"]))
     tiles[4].metric("Cost per request", usd(cost["mean_per_request"]), help="List price")
+    with st.expander(f"Raw response: GET /v1/dwarpal/stats?window={stats['window']}"):
+        st.json(stats)
     if not stats["requests"]:
         st.info("No requests in this window yet. Send a few through the proxy, e.g. from /demo.")
         return
+
+    st.subheader("Latency")
+    latency = pd.DataFrame(stats["latency_ms"]).T  # rows: added, total, upstream
+    st.dataframe(latency.rename_axis("ms").reset_index(), hide_index=True)
 
     # The policy name labels a bar; the version is added only when two versions run side by side.
     names = [g["guard"] for g in stats["guards"].values()]
