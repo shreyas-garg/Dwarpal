@@ -15,6 +15,11 @@ every guard's setup() without a key, and most requests never reach an LLM guard.
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import json
+import re
+import time
+from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Any, Protocol
 
@@ -22,6 +27,13 @@ import httpx
 
 from dwarpal.config import Settings, get_settings
 from dwarpal.upstream import UpstreamClient, UpstreamError
+
+# Overloaded or rate-limited, not wrong: worth one or two more tries.
+RETRY_STATUSES = {429, 500, 502, 503, 504}
+# Gemini's 429 says how long to wait: "retryDelay": "29s".
+_RETRY_DELAY = re.compile(r"retryDelay['\"]?\s*:\s*['\"](\d+(?:\.\d+)?)s")
+MAX_RETRY_WAIT_S = 60.0
+MEMO_SIZE = 1024
 
 
 class LLMError(Exception):
@@ -63,9 +75,22 @@ class LLMClient:
         default_model: str,
         timeout_s: float = 30.0,
         transport: httpx.AsyncBaseTransport | None = None,
+        retries: int = 2,
+        backoff_s: float = 1.0,
+        requests_per_minute: int = 0,
     ):
         self.api_key = api_key
         self.default_model = default_model
+        self.retries = retries
+        self.backoff_s = backoff_s
+        # Client-side pacing for keys with a tiny quota (Gemini's free tier allows 5 a minute
+        # for 2.5 Flash). 0 = no pacing.
+        self.min_interval_s = 60.0 / requests_per_minute if requests_per_minute > 0 else 0.0
+        self._pace_lock = asyncio.Lock()
+        self._next_slot = 0.0
+        # Identical temperature-0 requests in one process get the same answer without a second
+        # call; the eval scores each case per guard and then end to end with the same prompt.
+        self._memo: OrderedDict[str, Completion] = OrderedDict()
         self._upstream = UpstreamClient(base_url, api_key, timeout_s, transport=transport)
 
     @classmethod
@@ -78,6 +103,7 @@ class LLMClient:
             settings.upstream_model,
             settings.upstream_timeout_s,
             transport=transport,
+            requests_per_minute=settings.guard_llm_rpm,
         )
 
     async def complete(
@@ -89,10 +115,26 @@ class LLMClient:
             raise LLMError("no API key configured for guard LLM calls (set UPSTREAM_API_KEY)")
         payload = {"model": model or self.default_model, "messages": messages}
         payload.update({k: v for k, v in params.items() if v is not None})
-        try:
-            body = await self._upstream.chat(payload)
-        except UpstreamError as exc:
-            raise LLMError(f"LLM call failed with {exc.status_code}: {exc.body}") from exc
+        key = None
+        if payload.get("temperature") == 0:
+            key = hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
+            if (hit := self._memo.get(key)) is not None:
+                self._memo.move_to_end(key)
+                return hit
+
+        for attempt in range(self.retries + 1):
+            await self._pace()
+            try:
+                body = await self._upstream.chat(payload)
+                break
+            except UpstreamError as exc:
+                # Gemini answers 503 "high demand" and 429 in bursts; waiting usually clears
+                # it. The guard's timeout_ms still caps the total time spent here, so in the
+                # proxy a long wait ends in on_error rather than a stuck request.
+                if exc.status_code in RETRY_STATUSES and attempt < self.retries:
+                    await asyncio.sleep(self._retry_wait(exc, attempt))
+                    continue
+                raise LLMError(f"LLM call failed with {exc.status_code}: {exc.body}") from exc
         try:
             text = body["choices"][0]["message"]["content"]
         except (KeyError, IndexError, TypeError) as exc:
@@ -100,11 +142,32 @@ class LLMClient:
         if not isinstance(text, str):
             raise LLMError("LLM reply content is not text")
         usage = body.get("usage") or {}
-        return Completion(
+        completion = Completion(
             text=text,
             prompt_tokens=int(usage.get("prompt_tokens") or 0),
             completion_tokens=int(usage.get("completion_tokens") or 0),
         )
+        if key is not None:
+            self._memo[key] = completion
+            while len(self._memo) > MEMO_SIZE:
+                self._memo.popitem(last=False)
+        return completion
+
+    def _retry_wait(self, exc: UpstreamError, attempt: int) -> float:
+        backoff = self.backoff_s * 2**attempt
+        if exc.status_code == 429 and (m := _RETRY_DELAY.search(str(exc.body))):
+            return min(MAX_RETRY_WAIT_S, max(backoff, float(m.group(1))))
+        return backoff
+
+    async def _pace(self) -> None:
+        if not self.min_interval_s:
+            return
+        async with self._pace_lock:
+            now = time.monotonic()
+            wait = self._next_slot - now
+            self._next_slot = max(now, self._next_slot) + self.min_interval_s
+        if wait > 0:
+            await asyncio.sleep(wait)
 
     async def aclose(self) -> None:
         await self._upstream.aclose()

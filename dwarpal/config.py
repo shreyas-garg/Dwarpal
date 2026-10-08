@@ -48,6 +48,9 @@ class Settings(BaseSettings):
     # and how many guard decisions to keep for reuse on identical input. 0 = no cache.
     pipeline_strategy: Literal["tiered", "sequential", "parallel"] = "tiered"
     guard_cache_size: int = 2048
+    # Requests per minute for guard LLM calls (judge, schema repair). 0 = unpaced; set it to the
+    # key's quota on a free tier (Gemini 2.5 Flash free tier: 5).
+    guard_llm_rpm: int = 0
 
     @property
     def enabled_policy_names(self) -> set[str] | None:

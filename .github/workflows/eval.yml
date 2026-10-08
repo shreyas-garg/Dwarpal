@@ -47,6 +47,9 @@ jobs:
           # above, so only new or changed cases cost a call. Without the secret those guards fail
           # (fail_open / fail_closed) and the gate reports it rather than passing silently.
           UPSTREAM_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          # Free-tier Gemini allows 5 requests a minute for 2.5 Flash. Pacing keeps the first
+          # uncached run under it; later runs reuse eval/.cache and make almost no calls.
+          GUARD_LLM_RPM: "5"
 
       - name: Job summary
         if: always()
