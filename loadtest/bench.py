@@ -16,9 +16,10 @@ driven by loadtest/locustfile.py at each concurrency:
                          checks every reply and the injection guards also scan the FAQ
 
 Requests/second and client-side latency come from Locust; added latency (total - upstream, as
-the proxy measures it) and cost from the proxy's own request log; CPU and peak memory of the
-proxy process from psutil. The guard decision cache is off, so every request runs every guard.
-The proxy, the mock and Locust share the machine.
+the proxy measures it) from the proxy's own request log; CPU and peak memory of the proxy
+process from psutil. The guard decision cache is off, so every request runs every guard. The
+proxy, the mock and Locust share the machine. Cost is not measured here: the mock's token
+counts are made up, so cost per request comes from loadtest/real_run.py against Gemini.
 
   uv run --all-extras --group loadtest python loadtest/bench.py      # what make bench runs
   uv run --all-extras --group loadtest python loadtest/bench.py --duration 10 --users 1 10
@@ -82,7 +83,6 @@ def proxy_env(db: Path, policies: list[str]) -> dict[str, str]:
         **{
             "UPSTREAM_BASE_URL": f"http://127.0.0.1:{MOCK_PORT}/v1/",
             "UPSTREAM_API_KEY": "mock",  # the judge's client won't call out without a key
-            "UPSTREAM_MODEL": "gemini-2.5-flash",  # so cost is its list price
             "OVERRIDE_MODEL": "true",
             "POLICY_DIR": str(ROOT / "policies"),
             "ENABLED_POLICIES": ",".join(policies),
@@ -198,7 +198,6 @@ def measure(
         "blocked": stats["blocked"],
         "added_latency_p50_ms": percentile(added, 0.5),
         "added_latency_p99_ms": percentile(added, 0.99),
-        "cost_per_request_usd": stats["cost_usd"]["mean_per_request"],
         **usage,
         "guards": {
             ref: {**g["latency_ms"], "errors": g["errors"], "blocks": g["blocks"]}
@@ -307,8 +306,8 @@ def render(report: dict[str, Any]) -> str:
         "CPU is % of one core, for the proxy process only.",
         "",
         "| Scenario | Users | Req/s | Added p50 ms | Added p99 ms | Client p50 ms "
-        "| Client p99 ms | CPU % mean | Peak RAM MB | Cost / req (USD) | Blocked | HTTP errors |",
-        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+        "| Client p99 ms | CPU % mean | Peak RAM MB | Blocked | HTTP errors |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for name, scenario in report["scenarios"].items():
         for r in scenario["runs"]:
@@ -317,8 +316,7 @@ def render(report: dict[str, Any]) -> str:
                 f"| {num(r['added_latency_p50_ms'])} | {num(r['added_latency_p99_ms'])} "
                 f"| {r['client_latency_p50_ms']:.0f} | {r['client_latency_p99_ms']:.0f} "
                 f"| {r['cpu_mean_pct']:.0f} | {r['rss_peak_mb']:.0f} "
-                f"| {num(r['cost_per_request_usd'], 6)} | {r['blocked']}/{r['logged_requests']} "
-                f"| {r['failures']} |"
+                f"| {r['blocked']}/{r['logged_requests']} | {r['failures']} |"
             )
     lines += [
         "",
@@ -343,6 +341,8 @@ def render(report: dict[str, Any]) -> str:
         ]
         for ref, g in sorted(first["guards"].items(), key=lambda kv: -(kv[1]["p99"] or 0)):
             lines.append(f"| {ref} | {num(g['p50'])} | {num(g['p99'])} |")
+        if any(ref.startswith("faithfulness@") for ref in first["guards"]):
+            lines += ["", "`faithfulness` here is the mock standing in for the judge, not Gemini."]
     timeouts = [
         f"- `{name}`, {r['users']} users: "
         + ", ".join(f"{ref} {g['errors']}" for ref, g in r["guards"].items() if g["errors"])
