@@ -1,0 +1,605 @@
+{
+  "generated_at": "2026-10-08T20:42:28+0530",
+  "machine": {
+    "platform": "macOS-26.5.1-arm64-arm-64bit",
+    "cpu": "Apple M3",
+    "cores_logical": 8,
+    "cores_physical": 8,
+    "ram_gb": 16.0,
+    "python": "3.11.14"
+  },
+  "setup": {
+    "mock_upstream_latency_ms": 300.0,
+    "judge": "the mock upstream, fixed SUPPORTED verdict, same latency",
+    "duration_s_per_run": 30,
+    "traffic": "dev-set safe cases, round-robin (loadtest/locustfile.py)",
+    "guard_decision_cache": "off",
+    "pipeline_strategy": "tiered"
+  },
+  "scenarios": {
+    "no_guards": {
+      "policies": [],
+      "context": false,
+      "runs": [
+        {
+          "users": 1,
+          "requests": 95,
+          "failures": 0,
+          "requests_per_s": 3.27,
+          "client_latency_p50_ms": 310.0,
+          "client_latency_p99_ms": 310.0,
+          "logged_requests": 98,
+          "blocked": 0,
+          "added_latency_p50_ms": 0.039,
+          "added_latency_p99_ms": 0.074,
+          "cost_per_request_usd": 5.862755102040817e-05,
+          "cpu_mean_pct": 2.3,
+          "cpu_peak_pct": 3.9,
+          "rss_peak_mb": 70.5,
+          "guards": {}
+        },
+        {
+          "users": 10,
+          "requests": 965,
+          "failures": 0,
+          "requests_per_s": 32.19,
+          "client_latency_p50_ms": 310.0,
+          "client_latency_p99_ms": 320.0,
+          "logged_requests": 973,
+          "blocked": 0,
+          "added_latency_p50_ms": 0.015,
+          "added_latency_p99_ms": 0.039,
+          "cost_per_request_usd": 5.837841726618689e-05,
+          "cpu_mean_pct": 12.3,
+          "cpu_peak_pct": 19.3,
+          "rss_peak_mb": 71.1,
+          "guards": {}
+        },
+        {
+          "users": 50,
+          "requests": 4476,
+          "failures": 0,
+          "requests_per_s": 149.39,
+          "client_latency_p50_ms": 330.0,
+          "client_latency_p99_ms": 380.0,
+          "logged_requests": 4477,
+          "blocked": 0,
+          "added_latency_p50_ms": 0.007,
+          "added_latency_p99_ms": 0.032,
+          "cost_per_request_usd": 5.843024346660724e-05,
+          "cpu_mean_pct": 19.5,
+          "cpu_peak_pct": 29.6,
+          "rss_peak_mb": 74.3,
+          "guards": {}
+        }
+      ]
+    },
+    "cheap_only": {
+      "policies": [
+        "max_length",
+        "output_schema",
+        "secrets"
+      ],
+      "context": false,
+      "runs": [
+        {
+          "users": 1,
+          "requests": 95,
+          "failures": 0,
+          "requests_per_s": 3.25,
+          "client_latency_p50_ms": 310.0,
+          "client_latency_p99_ms": 310.0,
+          "logged_requests": 98,
+          "blocked": 0,
+          "added_latency_p50_ms": 0.741,
+          "added_latency_p99_ms": 3.986,
+          "cost_per_request_usd": 5.862755102040817e-05,
+          "cpu_mean_pct": 2.4,
+          "cpu_peak_pct": 3.7,
+          "rss_peak_mb": 70.6,
+          "guards": {
+            "max_length@1.0.0": {
+              "p50": 0.137,
+              "p99": 0.227,
+              "errors": 0,
+              "blocks": 0
+            },
+            "output_schema@1.0.0": {
+              "p50": 0.136,
+              "p99": 3.586,
+              "errors": 0,
+              "blocks": 0
+            },
+            "secrets@1.0.1": {
+              "p50": 0.178,
+              "p99": 0.389,
+              "errors": 0,
+              "blocks": 0
+            }
+          }
+        },
+        {
+          "users": 10,
+          "requests": 934,
+          "failures": 0,
+          "requests_per_s": 31.99,
+          "client_latency_p50_ms": 310.0,
+          "client_latency_p99_ms": 330.0,
+          "logged_requests": 964,
+          "blocked": 0,
+          "added_latency_p50_ms": 4.168,
+          "added_latency_p99_ms": 12.795,
+          "cost_per_request_usd": 5.841369294605794e-05,
+          "cpu_mean_pct": 10.6,
+          "cpu_peak_pct": 16.7,
+          "rss_peak_mb": 71.2,
+          "guards": {
+            "max_length@1.0.0": {
+              "p50": 0.656,
+              "p99": 3.717,
+              "errors": 0,
+              "blocks": 0
+            },
+            "output_schema@1.0.0": {
+              "p50": 1.111,
+              "p99": 5.598,
+              "errors": 0,
+              "blocks": 0
+            },
+            "secrets@1.0.1": {
+              "p50": 0.894,
+              "p99": 4.794,
+              "errors": 0,
+              "blocks": 0
+            }
+          }
+        },
+        {
+          "users": 50,
+          "requests": 4581,
+          "failures": 0,
+          "requests_per_s": 151.81,
+          "client_latency_p50_ms": 330.0,
+          "client_latency_p99_ms": 380.0,
+          "logged_requests": 4611,
+          "blocked": 0,
+          "added_latency_p50_ms": 9.775,
+          "added_latency_p99_ms": 26.893,
+          "cost_per_request_usd": 5.8420299284320294e-05,
+          "cpu_mean_pct": 22.5,
+          "cpu_peak_pct": 37.9,
+          "rss_peak_mb": 73.9,
+          "guards": {
+            "max_length@1.0.0": {
+              "p50": 1.625,
+              "p99": 14.109,
+              "errors": 0,
+              "blocks": 0
+            },
+            "output_schema@1.0.0": {
+              "p50": 1.959,
+              "p99": 10.009,
+              "errors": 0,
+              "blocks": 0
+            },
+            "secrets@1.0.1": {
+              "p50": 2.364,
+              "p99": 11.1,
+              "errors": 0,
+              "blocks": 0
+            }
+          }
+        }
+      ]
+    },
+    "all_but_faithfulness": {
+      "policies": [
+        "banned_topics",
+        "jailbreak",
+        "max_length",
+        "output_schema",
+        "pii",
+        "prompt_injection",
+        "secrets",
+        "toxicity"
+      ],
+      "context": false,
+      "runs": [
+        {
+          "users": 1,
+          "requests": 79,
+          "failures": 0,
+          "requests_per_s": 2.71,
+          "client_latency_p50_ms": 360.0,
+          "client_latency_p99_ms": 430.0,
+          "logged_requests": 82,
+          "blocked": 0,
+          "added_latency_p50_ms": 59.952,
+          "added_latency_p99_ms": 122.849,
+          "cost_per_request_usd": 5.764999999999999e-05,
+          "cpu_mean_pct": 84.3,
+          "cpu_peak_pct": 180.3,
+          "rss_peak_mb": 1796.6,
+          "guards": {
+            "banned_topics@1.0.0": {
+              "p50": 6.009,
+              "p99": 28.315,
+              "errors": 0,
+              "blocks": 0
+            },
+            "jailbreak@1.1.1": {
+              "p50": 29.939,
+              "p99": 83.779,
+              "errors": 0,
+              "blocks": 0
+            },
+            "max_length@1.0.0": {
+              "p50": 0.061,
+              "p99": 0.102,
+              "errors": 0,
+              "blocks": 0
+            },
+            "output_schema@1.0.0": {
+              "p50": 0.131,
+              "p99": 3.663,
+              "errors": 0,
+              "blocks": 0
+            },
+            "pii@1.0.1": {
+              "p50": 1.609,
+              "p99": 30.066,
+              "errors": 0,
+              "blocks": 0
+            },
+            "prompt_injection@1.1.1": {
+              "p50": 30.021,
+              "p99": 83.833,
+              "errors": 0,
+              "blocks": 0
+            },
+            "secrets@1.0.1": {
+              "p50": 0.124,
+              "p99": 0.352,
+              "errors": 0,
+              "blocks": 0
+            },
+            "toxicity@1.1.0": {
+              "p50": 28.306,
+              "p99": 56.061,
+              "errors": 0,
+              "blocks": 0
+            }
+          }
+        },
+        {
+          "users": 10,
+          "requests": 616,
+          "failures": 0,
+          "requests_per_s": 20.46,
+          "client_latency_p50_ms": 460.0,
+          "client_latency_p99_ms": 800.0,
+          "logged_requests": 621,
+          "blocked": 0,
+          "added_latency_p50_ms": 155.242,
+          "added_latency_p99_ms": 496.344,
+          "cost_per_request_usd": 5.83202898550724e-05,
+          "cpu_mean_pct": 586.1,
+          "cpu_peak_pct": 785.1,
+          "rss_peak_mb": 1811.3,
+          "guards": {
+            "banned_topics@1.0.0": {
+              "p50": 14.013,
+              "p99": 145.441,
+              "errors": 0,
+              "blocks": 0
+            },
+            "jailbreak@1.1.1": {
+              "p50": 90.87,
+              "p99": 416.985,
+              "errors": 0,
+              "blocks": 0
+            },
+            "max_length@1.0.0": {
+              "p50": 0.142,
+              "p99": 7.181,
+              "errors": 0,
+              "blocks": 0
+            },
+            "output_schema@1.0.0": {
+              "p50": 0.193,
+              "p99": 6.911,
+              "errors": 0,
+              "blocks": 0
+            },
+            "pii@1.0.1": {
+              "p50": 16.349,
+              "p99": 130.453,
+              "errors": 0,
+              "blocks": 0
+            },
+            "prompt_injection@1.1.1": {
+              "p50": 95.176,
+              "p99": 413.704,
+              "errors": 0,
+              "blocks": 0
+            },
+            "secrets@1.0.1": {
+              "p50": 0.165,
+              "p99": 6.728,
+              "errors": 0,
+              "blocks": 0
+            },
+            "toxicity@1.1.0": {
+              "p50": 32.964,
+              "p99": 176.879,
+              "errors": 0,
+              "blocks": 0
+            }
+          }
+        },
+        {
+          "users": 50,
+          "requests": 838,
+          "failures": 0,
+          "requests_per_s": 26.89,
+          "client_latency_p50_ms": 1700.0,
+          "client_latency_p99_ms": 2800.0,
+          "logged_requests": 844,
+          "blocked": 533,
+          "added_latency_p50_ms": 1576.525,
+          "added_latency_p99_ms": 2532.78,
+          "cost_per_request_usd": 3.065260663507106e-05,
+          "cpu_mean_pct": 769.5,
+          "cpu_peak_pct": 791.0,
+          "rss_peak_mb": 1451.9,
+          "guards": {
+            "banned_topics@1.0.0": {
+              "p50": 985.918,
+              "p99": 1388.324,
+              "errors": 0,
+              "blocks": 0
+            },
+            "jailbreak@1.1.1": {
+              "p50": 1135.956,
+              "p99": 1654.755,
+              "errors": 0,
+              "blocks": 2
+            },
+            "max_length@1.0.0": {
+              "p50": 0.508,
+              "p99": 4.35,
+              "errors": 0,
+              "blocks": 0
+            },
+            "output_schema@1.0.0": {
+              "p50": 1.003,
+              "p99": 11.006,
+              "errors": 0,
+              "blocks": 0
+            },
+            "pii@1.0.1": {
+              "p50": 963.169,
+              "p99": 1011.269,
+              "errors": 531,
+              "blocks": 531
+            },
+            "prompt_injection@1.1.1": {
+              "p50": 1142.166,
+              "p99": 1658.922,
+              "errors": 0,
+              "blocks": 2
+            },
+            "secrets@1.0.1": {
+              "p50": 0.668,
+              "p99": 7.639,
+              "errors": 0,
+              "blocks": 0
+            },
+            "toxicity@1.1.0": {
+              "p50": 947.121,
+              "p99": 1414.214,
+              "errors": 0,
+              "blocks": 0
+            }
+          }
+        }
+      ]
+    },
+    "all": {
+      "policies": [
+        "banned_topics",
+        "faithfulness",
+        "jailbreak",
+        "max_length",
+        "output_schema",
+        "pii",
+        "prompt_injection",
+        "secrets",
+        "toxicity"
+      ],
+      "context": true,
+      "runs": [
+        {
+          "users": 1,
+          "requests": 11,
+          "failures": 0,
+          "requests_per_s": 0.39,
+          "client_latency_p50_ms": 2600.0,
+          "client_latency_p99_ms": 2600.0,
+          "logged_requests": 12,
+          "blocked": 0,
+          "added_latency_p50_ms": 2260.242,
+          "added_latency_p99_ms": 2283.746,
+          "cost_per_request_usd": 0.00038052500000000005,
+          "cpu_mean_pct": 373.0,
+          "cpu_peak_pct": 495.2,
+          "rss_peak_mb": 3752.3,
+          "guards": {
+            "banned_topics@1.0.0": {
+              "p50": 17.116,
+              "p99": 38.936,
+              "errors": 0,
+              "blocks": 0
+            },
+            "faithfulness@1.0.0": {
+              "p50": 304.301,
+              "p99": 305.585,
+              "errors": 0,
+              "blocks": 0
+            },
+            "jailbreak@1.1.1": {
+              "p50": 1925.336,
+              "p99": 1946.308,
+              "errors": 0,
+              "blocks": 0
+            },
+            "max_length@1.0.0": {
+              "p50": 0.098,
+              "p99": 0.19,
+              "errors": 0,
+              "blocks": 0
+            },
+            "output_schema@1.0.0": {
+              "p50": 0.128,
+              "p99": 0.174,
+              "errors": 0,
+              "blocks": 0
+            },
+            "pii@1.0.1": {
+              "p50": 14.011,
+              "p99": 42.845,
+              "errors": 0,
+              "blocks": 0
+            },
+            "prompt_injection@1.1.1": {
+              "p50": 1926.89,
+              "p99": 1948.965,
+              "errors": 0,
+              "blocks": 0
+            },
+            "secrets@1.0.1": {
+              "p50": 0.154,
+              "p99": 0.307,
+              "errors": 0,
+              "blocks": 0
+            },
+            "toxicity@1.1.0": {
+              "p50": 28.4,
+              "p99": 29.716,
+              "errors": 0,
+              "blocks": 0
+            }
+          }
+        },
+        {
+          "users": 10,
+          "requests": 90,
+          "failures": 0,
+          "requests_per_s": 3.32,
+          "client_latency_p50_ms": 3000.0,
+          "client_latency_p99_ms": 3100.0,
+          "logged_requests": 100,
+          "blocked": 100,
+          "added_latency_p50_ms": 3005.803,
+          "added_latency_p99_ms": 3061.658,
+          "cost_per_request_usd": 0.0,
+          "cpu_mean_pct": 777.2,
+          "cpu_peak_pct": 798.5,
+          "rss_peak_mb": 3020.7,
+          "guards": {
+            "banned_topics@1.0.0": {
+              "p50": 2001.056,
+              "p99": 2004.705,
+              "errors": 85,
+              "blocks": 85
+            },
+            "jailbreak@1.1.1": {
+              "p50": 3002.389,
+              "p99": 3013.523,
+              "errors": 100,
+              "blocks": 100
+            },
+            "max_length@1.0.0": {
+              "p50": 0.146,
+              "p99": 22.772,
+              "errors": 0,
+              "blocks": 0
+            },
+            "pii@1.0.1": {
+              "p50": 1001.151,
+              "p99": 1003.138,
+              "errors": 91,
+              "blocks": 91
+            },
+            "prompt_injection@1.1.1": {
+              "p50": 3002.516,
+              "p99": 3013.578,
+              "errors": 100,
+              "blocks": 100
+            },
+            "secrets@1.0.1": {
+              "p50": 0.152,
+              "p99": 42.195,
+              "errors": 0,
+              "blocks": 0
+            }
+          }
+        },
+        {
+          "users": 50,
+          "requests": 500,
+          "failures": 0,
+          "requests_per_s": 16.33,
+          "client_latency_p50_ms": 3000.0,
+          "client_latency_p99_ms": 3400.0,
+          "logged_requests": 504,
+          "blocked": 504,
+          "added_latency_p50_ms": 3014.631,
+          "added_latency_p99_ms": 3093.184,
+          "cost_per_request_usd": 0.0,
+          "cpu_mean_pct": 779.6,
+          "cpu_peak_pct": 796.3,
+          "rss_peak_mb": 3026.7,
+          "guards": {
+            "banned_topics@1.0.0": {
+              "p50": 2001.526,
+              "p99": 2011.704,
+              "errors": 488,
+              "blocks": 488
+            },
+            "jailbreak@1.1.1": {
+              "p50": 3003.907,
+              "p99": 3015.932,
+              "errors": 499,
+              "blocks": 499
+            },
+            "max_length@1.0.0": {
+              "p50": 2.021,
+              "p99": 53.952,
+              "errors": 0,
+              "blocks": 0
+            },
+            "pii@1.0.1": {
+              "p50": 1001.689,
+              "p99": 1008.273,
+              "errors": 499,
+              "blocks": 499
+            },
+            "prompt_injection@1.1.1": {
+              "p50": 3004.02,
+              "p99": 3015.967,
+              "errors": 499,
+              "blocks": 499
+            },
+            "secrets@1.0.1": {
+              "p50": 2.341,
+              "p99": 46.886,
+              "errors": 0,
+              "blocks": 0
+            }
+          }
+        }
+      ]
+    }
+  }
+}
