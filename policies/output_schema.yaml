@@ -1,0 +1,30 @@
+# Output schema: when the request asks for JSON (dwarpal.response_schema, or an OpenAI
+# response_format of json_schema / json_object), the reply must parse and validate against it.
+# A broken reply gets one repair attempt from the model; if that fails too, it is blocked.
+# See docs/decisions/0007.
+name: output_schema
+version: 1.0.0
+guard: output_schema
+stages: [output]
+enabled: true
+mode: enforce
+action: block
+threshold: 0.5            # every check is pass/fail: an invalid reply scores 1.0
+tier: cheap               # parsing + validation take well under 1 ms; the rare repair call
+                          # is covered by timeout_ms, and repairing first means the content
+                          # guards after it check the text the client will actually get
+on_error: fail_closed     # a client that asked for JSON must not get unchecked output
+timeout_ms: 10000         # room for one repair call
+params:
+  repair_once: true
+  unwrap_fences: true
+  llm:
+    model: gemini-2.5-flash
+    temperature: 0
+    max_tokens: 1024
+    extra:
+      reasoning_effort: none
+    # USD per 1M tokens, paid tier, ai.google.dev/gemini-api/docs/pricing, checked 2026-10-08.
+    price_per_1m_tokens: {input: 0.30, output: 2.50}
+changelog:
+  - "1.0.0: jsonschema validation of the requested schema, code fences unwrapped, one repair call before blocking (docs/decisions/0007)"
