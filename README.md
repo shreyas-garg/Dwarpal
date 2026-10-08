@@ -104,13 +104,12 @@ call, as the proxy logs it.
 - **With context, the slow part is the context scan, not the judge.** The injection guards also
   scan the 2 KB FAQ for indirect injection: 1.9 s each, against the judge stand-in's 0.3 s (the
   real judge takes 1.7 s p50). From 10 users those scans time out.
-- **Cost per request** at list price ([config/pricing.yaml](config/pricing.yaml), $0.30 / $2.50
-  per 1M input / output tokens): $0.00006 for a plain request and $0.00038 for one the judge
-  checks, with the mock's token counts. Dwarpal's guards cost nothing extra on a plain request.
-  The faithfulness judge adds about $0.0004–0.0005 per checked reply against real Gemini
-  ([0007](docs/decisions/0007-output-guards-and-pipeline.md)).
-  [`loadtest/real_run.py`](loadtest/real_run.py) measures the end-to-end cost with Gemini's
-  real token counts.
+- **End-to-end latency with Gemini** (p50 / p99): **TBD**, pending the real Gemini run
+  ([`loadtest/real_run.py`](loadtest/real_run.py)).
+- **Cost per request** (Gemini 3.5 Flash-Lite at list price, [config/pricing.yaml](config/pricing.yaml)):
+  **TBD**, pending the real Gemini run. Dwarpal's guards cost nothing extra on a plain request;
+  the faithfulness judge adds about $0.0004–0.0005 per checked reply, measured against Gemini in
+  [0007](docs/decisions/0007-output-guards-and-pipeline.md).
 
 More detail, and what we would change: [docs/decisions/0008](docs/decisions/0008-telemetry-dashboard-and-numbers.md).
 
@@ -118,9 +117,8 @@ More detail, and what we would change: [docs/decisions/0008](docs/decisions/0008
 policies (prompt injection, jailbreak, PII, secrets, banned topics, toxicity, JSON schema,
 faithfulness, max length). Gated every merge on a hand-written 116-case red-team set in CI,
 reaching 100% catch rate at 0% false positives (87.5% and 0% on a 31-case holdout set) with
-60 ms p50 added latency and no extra model cost on plain requests (about $0.0005 when the LLM
-faithfulness judge runs). Added per-request telemetry (SQLite, Langfuse over OpenTelemetry), a
-Streamlit dashboard and a Docker image ready for Hugging Face Spaces.
+60 ms p50 added latency at **$TBD** per request. Added per-request telemetry (SQLite, Langfuse
+over OpenTelemetry), a Streamlit dashboard and a Docker image ready for Hugging Face Spaces.
 
 ## Setup
 
