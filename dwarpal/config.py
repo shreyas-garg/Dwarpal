@@ -52,6 +52,19 @@ class Settings(BaseSettings):
     # key's quota on a free tier (Gemini 2.5 Flash free tier: 5).
     guard_llm_rpm: int = 0
 
+    # PR-07: telemetry (dwarpal/telemetry). Every proxied request is logged to request_db in
+    # the background; the prompt is kept only as a SHA-256 unless log_prompts is on. Langfuse is
+    # used only when both keys are set. GET /v1/dwarpal/stats and /requests need admin_token in
+    # an X-Admin-Token header, and are off while it is empty.
+    request_db: Path = Path("data/requests.db")
+    pricing_file: Path = Path("config/pricing.yaml")
+    log_prompts: bool = False
+    admin_token: SecretStr = SecretStr("")
+    langfuse_public_key: str = ""
+    langfuse_secret_key: SecretStr = SecretStr("")
+    # EU region; the US region is https://us.cloud.langfuse.com
+    langfuse_base_url: str = "https://cloud.langfuse.com"
+
     @property
     def enabled_policy_names(self) -> set[str] | None:
         if self.enabled_policies.strip().lower() == "all":

@@ -1,0 +1,14 @@
+# PR-07: list prices for the upstream model, used for cost per request (dwarpal/telemetry).
+#
+# USD per 1M tokens, paid (Standard) tier. Source: https://ai.google.dev/gemini-api/docs/pricing,
+# checked 2026-10-08. Output includes thinking tokens, which Gemini bills as output.
+#
+# Free-tier calls cost nothing, but they are still priced here at list price, so "cost per
+# request" means something and shows what the same traffic would cost on a paid key.
+# The faithfulness judge and the schema repair price their own calls (price_per_1m_tokens in
+# their policy files); those costs reach the request log through each guard's cost_usd.
+# A model missing from this table is logged with a warning and costed at 0.
+models:
+  gemini-2.5-flash: {input: 0.30, output: 2.50}        # default UPSTREAM_MODEL
+  gemini-2.5-flash-lite: {input: 0.10, output: 0.40}
+  gemini-3.5-flash-lite: {input: 0.30, output: 2.50}   # same model the judge uses
