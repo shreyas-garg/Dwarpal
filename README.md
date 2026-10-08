@@ -39,11 +39,11 @@ More detail: [docs/architecture.md](docs/architecture.md).
 
 | Guard | Stage | Policy | Status |
 |---|---|---|---|
-| max_length (reference) | input | `policies/max_length.yaml` | ✅ |
-| prompt_injection, jailbreak | input | `policies/prompt_injection.yaml`, `policies/jailbreak.yaml` | ✅ |
-| pii, secrets | input + output | `policies/pii.yaml`, `policies/secrets.yaml` | ✅ |
-| banned_topics, toxicity | input / output | `policies/banned_topics.yaml`, `policies/toxicity.yaml` | ✅ |
-| output_schema, faithfulness | output | `policies/output_schema.yaml`, `policies/faithfulness.yaml` | ✅ |
+| max_length (reference) | input | `policies/max_length.yaml` | Done |
+| prompt_injection, jailbreak | input | `policies/prompt_injection.yaml`, `policies/jailbreak.yaml` | Done |
+| pii, secrets | input + output | `policies/pii.yaml`, `policies/secrets.yaml` | Done |
+| banned_topics, toxicity | input / output | `policies/banned_topics.yaml`, `policies/toxicity.yaml` | Done |
+| output_schema, faithfulness | output | `policies/output_schema.yaml`, `policies/faithfulness.yaml` | Done |
 
 ## Results
 
@@ -78,6 +78,8 @@ make dev-mock                 # terminal 2: proxy on :8000 pointed at the mock
 ```
 
 The demo chat is at http://localhost:8000/demo (try the attack dropdown).
+Rate any reply with the like / dislike icons, or `POST /v1/dwarpal/feedback` with
+`{"request_id": ..., "rating": "up" | "down"}`; ratings go to `data/feedback.jsonl`.
 `uv run python scripts/smoke_data_leak.py --mock` checks the PII and secrets guards against the
 running proxy.
 

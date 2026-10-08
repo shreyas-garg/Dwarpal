@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from dwarpal.guards.base import Guard, GuardContext, GuardResult, Stage, message_text
-from dwarpal.guards.normalize import normalize
+from dwarpal.guards.normalize import variants
 from dwarpal.guards.registry import register
 
 # Split after sentence-ending punctuation or a line break.
@@ -113,8 +113,9 @@ class BannedTopicsGuard(Guard):
         texts = [t for m in ctx.user_messages() if (t := message_text(m)).strip()]
         if not texts:
             return self.allow(reason="no user text")
-        # Also score a de-disguised copy ("s h o u l d  i  b u y"), only when it differs.
-        texts.extend(n for t in list(texts) if (n := normalize(t)) != t)
+        # Also score de-disguised copies ("s h o u l d  i  b u y", and from PR-04 also
+        # leetspeak like "B1tc01n"), only when they differ.
+        texts.extend(v for t in list(texts) for v in variants(t))
 
         if topic := self._keyword_hit(texts):
             return self.decide(1.0, reason=f"keyword: {topic}")

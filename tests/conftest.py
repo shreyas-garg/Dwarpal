@@ -117,7 +117,7 @@ def policy_dir(tmp_path: Path) -> Callable[..., Path]:
 
 
 @pytest.fixture
-def make_client() -> Iterator[Callable[..., TestClient]]:
+def make_client(tmp_path_factory) -> Iterator[Callable[..., TestClient]]:
     clients: list[TestClient] = []
 
     def make(policy_dir: Path = REPO_POLICIES, **settings_kw) -> TestClient:
@@ -126,6 +126,9 @@ def make_client() -> Iterator[Callable[..., TestClient]]:
         if policy_dir is REPO_POLICIES:
             settings_kw.setdefault("enabled_policies", "max_length")
         settings_kw.setdefault("demo_enabled", False)  # PR-04: tests/test_demo.py turns it on
+        settings_kw.setdefault(  # PR-04: never write test ratings into the repo's data/
+            "feedback_path", tmp_path_factory.mktemp("feedback") / "feedback.jsonl"
+        )
         settings = Settings(
             _env_file=None,
             upstream_base_url="http://mock/v1/",

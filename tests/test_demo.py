@@ -12,6 +12,7 @@ from dwarpal.demo import (  # noqa: E402
     REPLY_EXAMPLES,
     active_examples,
     make_check_reply,
+    make_on_like,
     make_preview,
     make_respond,
     trace_rows,
@@ -145,7 +146,7 @@ def test_chat_survives_an_upstream_error(demo_client):
     client, _ = demo_client
     broken = OpenAI(base_url="http://testserver/nope", api_key="x", http_client=client)
     history, _, rows, text = make_respond(broken, "m")("hello", [], FAQ, False)
-    assert history[1]["content"].startswith("⚠️ Upstream error")
+    assert history[1]["content"].startswith("Upstream error")
     assert rows == [] and text == ""
 
 
@@ -173,3 +174,24 @@ def test_faq_examples_fill_the_context_and_the_others_clear_it():
         assert reply == REPLY_EXAMPLES[label]
         assert context == (FAQ if label in FAQ_REPLY_EXAMPLES else "")
     assert pick_reply(None) == ("", "")
+
+
+# --- rating a reply ---
+
+
+def test_reply_carries_its_request_id(demo_client):
+    _, sdk = demo_client
+    history, *_ = make_respond(sdk, "m")("How do I export invoices?", [], FAQ, False)
+    assert len(history[1]["metadata"]["id"]) == 16
+
+
+def test_like_and_dislike_are_recorded(demo_client):
+    from types import SimpleNamespace
+
+    client, sdk = demo_client
+    history, *_ = make_respond(sdk, "m")("How do I export invoices?", [], FAQ, False)
+    on_like = make_on_like(lambda: client.app.state.feedback)
+    assert "up" in on_like(history, SimpleNamespace(index=1, liked=True))
+    assert "down" in on_like(history, SimpleNamespace(index=1, liked="Dislike"))
+    assert on_like(history, SimpleNamespace(index=0, liked=True)).startswith("Only answers")
+    assert client.app.state.feedback.summary() == {"rated": 1, "up": 0, "down": 1, "up_rate": 0.0}

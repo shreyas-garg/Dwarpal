@@ -20,6 +20,7 @@ from fastapi import FastAPI
 from openai import APIConnectionError, APIStatusError, OpenAI
 
 from dwarpal.config import Settings
+from dwarpal.feedback import FeedbackLog
 from dwarpal.guards.base import Action, GuardContext, Stage
 from dwarpal.pipeline import Pipeline
 
@@ -182,11 +183,15 @@ def make_respond(client: OpenAI, model: str, preview: Callable[[str], str] | Non
             body = raw.http_response.json()
             answer = body["choices"][0]["message"]["content"] or ""
             trace = body.get("dwarpal")
+            request_id = raw.http_response.headers.get("x-dwarpal-request-id")
         except (APIStatusError, APIConnectionError) as exc:
-            answer, trace = f"⚠️ Upstream error: {exc}", None
-        reply = {"role": "assistant", "content": html.escape(answer, quote=False)}
+            answer, trace, request_id = f"Upstream error: {exc}", None, None
+        reply: dict[str, Any] = {"role": "assistant", "content": html.escape(answer, quote=False)}
+        metadata = {"id": request_id} if request_id else {}  # what a rating is filed under
         if trace and trace.get("blocked_by"):
-            reply["metadata"] = {"title": f"{BLOCKED} by {trace['blocked_by']}"}
+            metadata["title"] = f"{BLOCKED} by {trace['blocked_by']}"
+        if metadata:
+            reply["metadata"] = metadata
         history = history + [{"role": "user", "content": html.escape(message, quote=False)}, reply]
         summary = verdict(trace)
         if preview and trace and not trace.get("blocked_by") and "redaction" in summary:
@@ -195,6 +200,26 @@ def make_respond(client: OpenAI, model: str, preview: Callable[[str], str] | Non
         return history, "", trace_rows(trace), summary
 
     return respond
+
+
+def make_on_like(get_feedback: Callable[[], FeedbackLog]):
+    """Like / dislike on a reply records thumbs up or down for that request."""
+
+    def on_like(history: list[dict], data: gr.LikeData) -> str:
+        message = history[data.index] if isinstance(data.index, int) else None
+        request_id = ((message or {}).get("metadata") or {}).get("id")
+        if not request_id:
+            return "Only answers from the model can be rated."
+        if data.liked in (True, "Like"):
+            rating = "up"
+        elif data.liked in (False, "Dislike"):
+            rating = "down"
+        else:
+            return ""
+        get_feedback().record(request_id, rating)
+        return f"Feedback saved ({rating}) for request {request_id}."
+
+    return on_like
 
 
 def make_check_reply(get_pipeline: Callable[[], Pipeline], refusal: str):
@@ -214,7 +239,11 @@ def make_check_reply(get_pipeline: Callable[[], Pipeline], refusal: str):
     return check_reply
 
 
-def build_demo(settings: Settings, get_pipeline: Callable[[], Pipeline]) -> gr.Blocks:
+def build_demo(
+    settings: Settings,
+    get_pipeline: Callable[[], Pipeline],
+    get_feedback: Callable[[], FeedbackLog],
+) -> gr.Blocks:
     base_url = settings.demo_proxy_url or f"http://127.0.0.1:{os.environ.get('PORT', '8000')}/v1"
     api_key = next(iter(sorted(settings.api_key_set)), "dwarpal-demo")
     respond = make_respond(
@@ -223,6 +252,7 @@ def build_demo(settings: Settings, get_pipeline: Callable[[], Pipeline]) -> gr.B
         make_preview(get_pipeline),
     )
     check_reply = make_check_reply(get_pipeline, settings.refusal_message)
+    on_like = make_on_like(get_feedback)
 
     def on_load():
         active = {p.name for p in get_pipeline().policies}
@@ -242,6 +272,7 @@ def build_demo(settings: Settings, get_pipeline: Callable[[], Pipeline]) -> gr.B
                     chatbot = gr.Chatbot(
                         type="messages", height=420, label="Ledgerly support", allow_tags=False
                     )
+                    feedback_status = gr.Markdown()  # rate a reply with the like / dislike icons
                     box = gr.Textbox(
                         placeholder="Ask about invoices, GST, exports…", label="Message"
                     )
@@ -260,6 +291,7 @@ def build_demo(settings: Settings, get_pipeline: Callable[[], Pipeline]) -> gr.B
                         row_count=1, headers=TRACE_HEADERS, label="Guard trace", wrap=True
                     )
             attack.change(lambda label: CHAT_EXAMPLES[label][1] if label else "", attack, box)
+            chatbot.like(on_like, chatbot, feedback_status)
             box.submit(
                 respond,
                 [box, chatbot, context, send_context],
@@ -287,5 +319,5 @@ def build_demo(settings: Settings, get_pipeline: Callable[[], Pipeline]) -> gr.B
 
 
 def mount_demo(app: FastAPI, settings: Settings) -> FastAPI:
-    demo = build_demo(settings, lambda: app.state.pipeline)
+    demo = build_demo(settings, lambda: app.state.pipeline, lambda: app.state.feedback)
     return gr.mount_gradio_app(app, demo, path="/demo")

@@ -13,6 +13,7 @@ from fastapi.responses import JSONResponse
 
 from dwarpal import __version__
 from dwarpal.config import Settings, get_settings
+from dwarpal.feedback import FeedbackLog
 from dwarpal.limits import LOOPBACK, DailyCap, RateLimiter, client_ip
 from dwarpal.llm import LLMClient, set_llm
 from dwarpal.pipeline import Pipeline, PipelineTrace
@@ -90,6 +91,7 @@ def create_app(
 
     app = FastAPI(title="Dwarpal", version=__version__, lifespan=lifespan)
     app.state.settings = settings
+    app.state.feedback = FeedbackLog(settings.feedback_path)  # PR-04
     # PR-05: per-IP rate limit and daily cap, both off unless configured.
     rate_limiter = RateLimiter(settings.rate_limit_per_minute)
     daily_cap = DailyCap(settings.daily_request_cap)
@@ -115,6 +117,20 @@ def create_app(
         }
 
     # PR-03: what is guarding traffic right now — policy versions, modes, and the deployed SHA.
+    # PR-04: rate a reply. The online quality signal, alongside the offline eval set.
+    @app.post("/v1/dwarpal/feedback")
+    async def feedback(request: Request) -> Any:
+        if (denied := check_auth(request)) is not None:
+            return denied
+        try:
+            body = await request.json()
+            entry = request.app.state.feedback.record(
+                str(body.get("request_id", "")), body.get("rating")
+            )
+        except (ValueError, AttributeError) as exc:
+            return openai_error(400, str(exc))
+        return entry
+
     @app.get("/v1/dwarpal/policies")
     async def policies(request: Request) -> Any:
         if (denied := check_auth(request)) is not None:

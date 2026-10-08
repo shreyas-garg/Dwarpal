@@ -25,7 +25,7 @@ import asyncio
 
 from dwarpal.guards.base import Guard, GuardContext, GuardResult, Stage, message_text
 from dwarpal.guards.heuristics import CompiledPattern, compile_patterns, score_texts
-from dwarpal.guards.normalize import normalize
+from dwarpal.guards.normalize import variants
 
 
 class InputAttackGuard(Guard):
@@ -55,7 +55,7 @@ class InputAttackGuard(Guard):
         texts.extend(ctx.context_docs)
         # PR-04: also score a de-disguised copy (spaced letters, invisible chars), only when it
         # differs, so ordinary messages cost nothing extra.
-        texts.extend(n for t in list(texts) if (n := normalize(t)) != t)
+        texts.extend(v for t in list(texts) for v in variants(t))
         return [t for t in texts if t.strip()]
 
     async def check(self, ctx: GuardContext, stage: Stage) -> GuardResult:

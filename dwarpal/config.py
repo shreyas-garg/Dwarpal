@@ -34,6 +34,8 @@ class Settings(BaseSettings):
     # the OpenAI SDK; empty demo_proxy_url = this process, http://127.0.0.1:$PORT/v1.
     demo_enabled: bool = True
     demo_proxy_url: str = ""
+    # PR-04: thumbs up / down per request, from the demo or POST /v1/dwarpal/feedback.
+    feedback_path: Path = Path("data/feedback.jsonl")
 
     # Baked into the Docker image at build time so /healthz can prove deployed == main.
     git_sha: str = "dev"

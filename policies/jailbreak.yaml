@@ -3,7 +3,7 @@
 # the weighted patterns below, then the same pretrained classifier the injection guard uses;
 # score = max of the two. Pattern edits are policy changes: bump the version.
 name: jailbreak
-version: 1.1.1
+version: 1.1.2
 guard: jailbreak
 stages: [input]
 enabled: true
@@ -62,3 +62,4 @@ changelog:
   - "1.0.0: heuristic patterns + protectai/deberta-v3-base-prompt-injection-v2, threshold from the PR-03 sweep (docs/decisions/0003)"
   - "1.1.0: classifier swapped to Horizon-Labs/prompt-injection-guard-base, which stops blocking questions about the user's own account data (docs/decisions/0004)"
   - "1.1.1: long input read in token windows, not character windows"
+  - "1.1.2: also scores a de-leeted copy (\"B1tc01n\" -> \"Bitcoin\"), only for words that are mostly letters"

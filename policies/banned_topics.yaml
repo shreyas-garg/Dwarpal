@@ -4,7 +4,7 @@
 # phrasings with no innocent reading. See docs/decisions/0006.
 # Adding a topic or phrasing is a policy change: bump the version and add a changelog line.
 name: banned_topics
-version: 1.0.0
+version: 1.0.1
 guard: banned_topics
 stages: [input]
 enabled: true
@@ -76,3 +76,4 @@ params:
         - '\b(make|build|assemble)\s+(a\s+|an\s+)?(pipe\s*)?(bomb|explosives?|ied)\b'
 changelog:
   - "1.0.0: five topics, all-MiniLM-L6-v2 similarity at 0.48 plus keyword first check (docs/decisions/0006)"
+  - "1.0.1: also scores a de-leeted copy (\"B1tc01n\" -> \"Bitcoin\"), only for words that are mostly letters"
