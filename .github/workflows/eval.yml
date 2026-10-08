@@ -26,7 +26,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: eval/.cache
-          key: eval-${{ hashFiles('policies/*.yaml', 'dwarpal/guards/*.py', 'eval/datasets/*.jsonl') }}
+          key: eval-${{ hashFiles('policies/*.yaml', 'policies/prompts/*', 'dwarpal/guards/*.py', 'eval/datasets/*.jsonl') }}
           restore-keys: eval-
 
       # PR-03: the input-attack guards load a pretrained classifier (~700 MB) from the HF
@@ -42,6 +42,11 @@ jobs:
       # written either way, so the table below explains a red build.
       - name: Eval
         run: make eval
+        env:
+          # PR-06: the faithfulness judge and the schema repair call Gemini. Decisions are cached
+          # above, so only new or changed cases cost a call. Without the secret those guards fail
+          # (fail_open / fail_closed) and the gate reports it rather than passing silently.
+          UPSTREAM_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
       - name: Job summary
         if: always()

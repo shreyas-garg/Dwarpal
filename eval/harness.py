@@ -134,6 +134,7 @@ def _context_for(case: EvalCase) -> GuardContext:
         messages=[{"role": "user", "content": case.input}],
         response_text=case.response if case.stage is Stage.OUTPUT else None,
         context_docs=list(case.context),
+        response_schema=case.response_schema,  # PR-06
         request_id=f"eval-{case.id}",
     )
 
@@ -158,7 +159,10 @@ async def _score_case(guard: Guard, policy: Policy, case: EvalCase, cache: Cache
         "action": result.action.value,
         "latency_ms": round((time.perf_counter() - started) * 1000, 3),
     }
-    cache.put(key, decision)
+    # PR-06: a crash or timeout (e.g. the judge without an API key) is not this guard's
+    # decision on this case. Caching it would replay the failure after the cause is fixed.
+    if not result.error:
+        cache.put(key, decision)
     return Outcome(case.id, **decision)
 
 
@@ -201,8 +205,13 @@ def _payload_for(case: EvalCase) -> dict[str, Any]:
     }
     if case.response:
         payload["mock_response"] = case.response  # output cases never call a real model
+    options: dict[str, Any] = {}
     if case.context:
-        payload["dwarpal"] = {"context": case.context}
+        options["context"] = case.context
+    if case.response_schema is not None:  # PR-06
+        options["response_schema"] = case.response_schema
+    if options:
+        payload["dwarpal"] = options
     return payload
 
 
@@ -220,7 +229,8 @@ async def _score_pipeline_case(
         "action": trace.blocked_by or ("redact" if redacted else "allow"),
         "latency_ms": round(trace.added_latency_ms, 3),
     }
-    cache.put(key, decision)
+    if not any(r.error for r in trace.results):  # PR-06, as in _score_case
+        cache.put(key, decision)
     return Outcome(case.id, **decision)
 
 
@@ -365,9 +375,10 @@ async def run(cache_enabled: bool = True) -> dict[str, Any]:
 
 def write_reports(report: dict[str, Any], out_dir: Path = REPORT_DIR) -> str:
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / "latest.json").write_text(json.dumps(report, indent=2) + "\n")
+    # utf-8 explicitly: the report has ✅/❌, which Windows' default encoding cannot write.
+    (out_dir / "latest.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     markdown = render_markdown(report)
-    (out_dir / "latest.md").write_text(markdown)
+    (out_dir / "latest.md").write_text(markdown, encoding="utf-8")
     return markdown
 
 
