@@ -12,8 +12,9 @@
   ],
   "cases": 116,
   "attacks": 56,
+  "faq_context_on_every_reply": false,
   "judge_stand_in": {
-    "latency_ms": 900.0,
+    "latency_ms": 1700.0,
     "prompt_tokens": 700,
     "completion_tokens": 120
   },
@@ -23,31 +24,31 @@
     "cpus": 16,
     "python": "3.11.9"
   },
-  "generated_at": "2026-10-08T17:43:27+0530",
+  "generated_at": "2026-10-08T19:04:38+0530",
   "strategies": {
     "sequential": {
       "requests": 348,
-      "added_latency_p50_ms": 85.347,
-      "added_latency_p99_ms": 1123.748,
-      "added_latency_mean_ms": 199.677,
+      "added_latency_p50_ms": 117.444,
+      "added_latency_p99_ms": 2008.288,
+      "added_latency_mean_ms": 332.708,
       "judge_calls_per_request": 0.1207,
       "guard_cost_per_request_usd": 6.155172413793104e-05,
       "decisions_differ_from_sequential": []
     },
     "tiered": {
       "requests": 348,
-      "added_latency_p50_ms": 75.665,
-      "added_latency_p99_ms": 1227.777,
-      "added_latency_mean_ms": 1197.349,
+      "added_latency_p50_ms": 81.635,
+      "added_latency_p99_ms": 1925.219,
+      "added_latency_mean_ms": 300.68,
       "judge_calls_per_request": 0.1207,
       "guard_cost_per_request_usd": 6.155172413793104e-05,
       "decisions_differ_from_sequential": []
     },
     "parallel": {
       "requests": 348,
-      "added_latency_p50_ms": 123.323,
-      "added_latency_p99_ms": 1183.943,
-      "added_latency_mean_ms": 242.605,
+      "added_latency_p50_ms": 84.544,
+      "added_latency_p99_ms": 1902.88,
+      "added_latency_mean_ms": 300.001,
       "judge_calls_per_request": 0.1207,
       "guard_cost_per_request_usd": 6.155172413793104e-05,
       "decisions_differ_from_sequential": []

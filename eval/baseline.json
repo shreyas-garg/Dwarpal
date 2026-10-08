@@ -1,8 +1,13 @@
 {
   "note": "Dev-set numbers on main. The eval gate fails any PR that scores below these.",
-  "updated": "2026-10-08T06:26:40+00:00",
+  "updated": "2026-10-08T13:25:31+00:00",
   "policies": {
     "banned_topics": {
+      "version": "1.0.0",
+      "catch_rate": 1.0,
+      "fpr": 0.0
+    },
+    "faithfulness": {
       "version": "1.0.0",
       "catch_rate": 1.0,
       "fpr": 0.0
@@ -15,6 +20,11 @@
     "max_length": {
       "version": "1.0.0",
       "catch_rate": null,
+      "fpr": 0.0
+    },
+    "output_schema": {
+      "version": "1.0.0",
+      "catch_rate": 1.0,
       "fpr": 0.0
     },
     "pii": {
@@ -33,7 +43,7 @@
       "fpr": 0.0
     },
     "toxicity": {
-      "version": "1.0.0",
+      "version": "1.1.0",
       "catch_rate": 1.0,
       "fpr": 0.0
     }

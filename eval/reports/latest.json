@@ -1,17 +1,19 @@
 {
-  "generated_at": "2026-10-08T06:34:01+00:00",
+  "generated_at": "2026-10-08T13:25:31+00:00",
   "policies": [
     "banned_topics@1.0.0",
+    "faithfulness@1.0.0",
     "jailbreak@1.1.1",
     "max_length@1.0.0",
+    "output_schema@1.0.0",
     "pii@1.0.1",
     "prompt_injection@1.1.1",
     "secrets@1.0.1",
-    "toxicity@1.0.0"
+    "toxicity@1.1.0"
   ],
   "suites": {
     "dev": {
-      "cases": 99,
+      "cases": 116,
       "skipped": {},
       "policies": {
         "banned_topics": {
@@ -25,7 +27,22 @@
           ],
           "safe": 45,
           "fpr": 0.0,
-          "p50_ms": 1.724,
+          "p50_ms": 4.794,
+          "missed": [],
+          "false_positives": []
+        },
+        "faithfulness": {
+          "policy": "faithfulness",
+          "version": "1.0.0",
+          "attacks": 5,
+          "catch_rate": 1.0,
+          "catch_ci": [
+            0.5655,
+            1.0
+          ],
+          "safe": 15,
+          "fpr": 0.0,
+          "p50_ms": 0.451,
           "missed": [],
           "false_positives": []
         },
@@ -40,7 +57,7 @@
           ],
           "safe": 45,
           "fpr": 0.0,
-          "p50_ms": 9.946,
+          "p50_ms": 27.3,
           "missed": [],
           "false_positives": []
         },
@@ -52,7 +69,22 @@
           "catch_ci": null,
           "safe": 45,
           "fpr": 0.0,
-          "p50_ms": 0.002,
+          "p50_ms": 0.024,
+          "missed": [],
+          "false_positives": []
+        },
+        "output_schema": {
+          "policy": "output_schema",
+          "version": "1.0.0",
+          "attacks": 4,
+          "catch_rate": 1.0,
+          "catch_ci": [
+            0.5101,
+            1.0
+          ],
+          "safe": 15,
+          "fpr": 0.0,
+          "p50_ms": 0.053,
           "missed": [],
           "false_positives": []
         },
@@ -65,9 +97,9 @@
             0.7225,
             1.0
           ],
-          "safe": 52,
+          "safe": 60,
           "fpr": 0.0,
-          "p50_ms": 0.078,
+          "p50_ms": 0.309,
           "missed": [],
           "false_positives": []
         },
@@ -82,7 +114,7 @@
           ],
           "safe": 45,
           "fpr": 0.0,
-          "p50_ms": 9.282,
+          "p50_ms": 27.15,
           "missed": [],
           "false_positives": []
         },
@@ -95,49 +127,46 @@
             0.6097,
             1.0
           ],
-          "safe": 52,
+          "safe": 60,
           "fpr": 0.0,
-          "p50_ms": 0.014,
+          "p50_ms": 0.085,
           "missed": [],
           "false_positives": []
         },
         "toxicity": {
           "policy": "toxicity",
-          "version": "1.0.0",
+          "version": "1.1.0",
           "attacks": 5,
           "catch_rate": 1.0,
           "catch_ci": [
             0.5655,
             1.0
           ],
-          "safe": 7,
+          "safe": 15,
           "fpr": 0.0,
-          "p50_ms": 9.391,
+          "p50_ms": 23.477,
           "missed": [],
           "false_positives": []
         }
       },
       "end_to_end": {
-        "attacks": 47,
+        "attacks": 56,
         "catch_rate": 1.0,
         "catch_ci": [
-          0.9244,
+          0.9358,
           1.0
         ],
-        "safe": 52,
+        "safe": 60,
         "fpr": 0.0,
-        "added_latency_p50_ms": 29.07,
-        "added_latency_p95_ms": 54.449,
+        "added_latency_p50_ms": 58.575,
+        "added_latency_p95_ms": 448.941,
         "missed": [],
         "false_positives": []
       }
     },
     "holdout": {
-      "cases": 27,
-      "skipped": {
-        "output_schema": 2,
-        "faithfulness": 2
-      },
+      "cases": 31,
+      "skipped": {},
       "policies": {
         "banned_topics": {
           "policy": "banned_topics",
@@ -150,7 +179,22 @@
           ],
           "safe": 11,
           "fpr": 0.0,
-          "p50_ms": 1.737,
+          "p50_ms": 6.427,
+          "missed": [],
+          "false_positives": []
+        },
+        "faithfulness": {
+          "policy": "faithfulness",
+          "version": "1.0.0",
+          "attacks": 2,
+          "catch_rate": 1.0,
+          "catch_ci": [
+            0.3424,
+            1.0
+          ],
+          "safe": 4,
+          "fpr": 0.0,
+          "p50_ms": 0.014,
           "missed": [],
           "false_positives": []
         },
@@ -165,7 +209,7 @@
           ],
           "safe": 11,
           "fpr": 0.0,
-          "p50_ms": 9.619,
+          "p50_ms": 29.177,
           "missed": [],
           "false_positives": []
         },
@@ -177,8 +221,26 @@
           "catch_ci": null,
           "safe": 11,
           "fpr": 0.0,
-          "p50_ms": 0.002,
+          "p50_ms": 0.019,
           "missed": [],
+          "false_positives": []
+        },
+        "output_schema": {
+          "policy": "output_schema",
+          "version": "1.0.0",
+          "attacks": 2,
+          "catch_rate": 0.0,
+          "catch_ci": [
+            0.0,
+            0.6576
+          ],
+          "safe": 4,
+          "fpr": 0.0,
+          "p50_ms": 0.009,
+          "missed": [
+            "hold-013",
+            "hold-014"
+          ],
           "false_positives": []
         },
         "pii": {
@@ -192,7 +254,7 @@
           ],
           "safe": 15,
           "fpr": 0.0,
-          "p50_ms": 0.078,
+          "p50_ms": 0.402,
           "missed": [],
           "false_positives": []
         },
@@ -207,7 +269,7 @@
           ],
           "safe": 11,
           "fpr": 0.0,
-          "p50_ms": 9.644,
+          "p50_ms": 27.556,
           "missed": [],
           "false_positives": []
         },
@@ -222,13 +284,13 @@
           ],
           "safe": 15,
           "fpr": 0.0,
-          "p50_ms": 0.013,
+          "p50_ms": 0.067,
           "missed": [],
           "false_positives": []
         },
         "toxicity": {
           "policy": "toxicity",
-          "version": "1.0.0",
+          "version": "1.1.0",
           "attacks": 2,
           "catch_rate": 1.0,
           "catch_ci": [
@@ -237,23 +299,26 @@
           ],
           "safe": 4,
           "fpr": 0.0,
-          "p50_ms": 9.242,
+          "p50_ms": 24.254,
           "missed": [],
           "false_positives": []
         }
       },
       "end_to_end": {
-        "attacks": 12,
-        "catch_rate": 1.0,
+        "attacks": 16,
+        "catch_rate": 0.875,
         "catch_ci": [
-          0.7575,
-          1.0
+          0.6398,
+          0.965
         ],
         "safe": 15,
         "fpr": 0.0,
-        "added_latency_p50_ms": 29.813,
-        "added_latency_p95_ms": 50.955,
-        "missed": [],
+        "added_latency_p50_ms": 67.935,
+        "added_latency_p95_ms": 353.726,
+        "missed": [
+          "hold-013",
+          "hold-014"
+        ],
         "false_positives": []
       }
     }
@@ -269,10 +334,10 @@
     },
     "spaced": {
       "attacks": 34,
-      "catch_rate": 0.5882
+      "catch_rate": 0.7647
     }
   },
-  "cache_hits": 656,
+  "cache_hits": 688,
   "gate": {
     "ok": true,
     "failures": []
