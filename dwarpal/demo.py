@@ -63,7 +63,21 @@ REPLY_EXAMPLES: dict[str, str] = {
     "Another customer's details": "That invoice was raised by Sanjay Rao "
     "(sanjay.rao@example.com, +91 90040 12345) from the Pune office.",
     "Safe reply": "Invoice INV-2025-004417 for ₹12,980 was emailed to the client on 14 Feb.",
+    # PR-06: these two are judged against the FAQ by the faithfulness guard.
+    "Made-up refund rule (vs the FAQ)": "Monthly plans can be refunded within 30 days, and "
+    "the money is back in your account within 2 working days.",
+    "Faithful answer (vs the FAQ)": "Pro costs ₹499 a month and includes unlimited invoices, "
+    "custom branding, recurring invoices and payment reminders.",
 }
+# PR-06: picking one of these fills the context box with the FAQ; the others clear it, so each
+# example shows its own guard's decision rather than the faithfulness judge's.
+FAQ_REPLY_EXAMPLES = {"Made-up refund rule (vs the FAQ)", "Faithful answer (vs the FAQ)"}
+
+
+def pick_reply(label: str | None) -> tuple[str, str]:
+    """(reply, context) for an example in the reply-check tab."""
+    return REPLY_EXAMPLES.get(label or "", ""), FAQ if label in FAQ_REPLY_EXAMPLES else ""
+
 
 TRACE_HEADERS = ["stage", "policy", "action", "score", "ms", "reason"]
 WIDTHS = ["11%", "22%", "12%", "9%", "9%", "37%"]
@@ -266,7 +280,7 @@ def build_demo(settings: Settings, get_pipeline: Callable[[], Pipeline]) -> gr.B
                     reply_trace = gr.Dataframe(
                         row_count=1, headers=TRACE_HEADERS, label="Guard trace", wrap=True
                     )
-            reply_pick.change(lambda k: REPLY_EXAMPLES.get(k, ""), reply_pick, reply)
+            reply_pick.change(pick_reply, reply_pick, [reply, reply_context])
             run.click(check_reply, [reply, reply_context], [shown, reply_trace, reply_verdict])
         demo.load(on_load, None, [attack, policies_line])
     return demo

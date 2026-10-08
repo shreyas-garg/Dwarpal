@@ -162,3 +162,14 @@ async def test_reply_checker_blocks_a_leaked_key(make_client, tmp_path):
     assert "<EMAIL_1>" in shown and "Allowed after redaction" in text
     shown, _, text = await check(REPLY_EXAMPLES["Safe reply"], "")
     assert shown == REPLY_EXAMPLES["Safe reply"] and text.startswith("**Allowed.**")
+
+
+def test_faq_examples_fill_the_context_and_the_others_clear_it():
+    """PR-06: only the faithfulness examples are judged against the FAQ."""
+    from dwarpal.demo import FAQ_REPLY_EXAMPLES, pick_reply
+
+    for label in REPLY_EXAMPLES:
+        reply, context = pick_reply(label)
+        assert reply == REPLY_EXAMPLES[label]
+        assert context == (FAQ if label in FAQ_REPLY_EXAMPLES else "")
+    assert pick_reply(None) == ("", "")
