@@ -30,6 +30,7 @@ from dwarpal.guards.normalize import normalize
 
 class InputAttackGuard(Guard):
     stages = frozenset({Stage.INPUT})
+    cacheable = True  # PR-06: pure function of the text, safe to reuse per version
 
     def __init__(self, policy):
         super().__init__(policy)

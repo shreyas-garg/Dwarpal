@@ -11,6 +11,9 @@ dependencies = [
     "pydantic>=2.7",
     "pydantic-settings>=2.3",
     "pyyaml>=6.0",
+    # PR-06: output_schema validates replies against the client's JSON Schema. Small and pure
+    # Python apart from one Rust wheel, so it lives in core rather than an extra.
+    "jsonschema>=4.22",
 ]
 
 [project.optional-dependencies]

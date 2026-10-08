@@ -89,6 +89,9 @@ class GuardResult:
     # PR-04: REDACT that only gave the user back their own values (pii restore). It changes
     # the reply, so the pipeline must apply it, but nothing was caught.
     restored: bool = False
+    # PR-06: True when the pipeline reused an earlier decision for the same input (no model
+    # was run, so cost_usd is 0).
+    cached: bool = False
 
     @property
     def caught(self) -> bool:
@@ -107,12 +110,17 @@ class GuardResult:
             "error": self.error,
             "shadow": self.shadow,
             "restored": self.restored,
+            "cached": self.cached,
         }
 
 
 class Guard(ABC):
     name: ClassVar[str]  # set by @register
     stages: ClassVar[frozenset[Stage]]  # stages this guard supports
+    # PR-06: the pipeline may reuse this guard's decision for an identical input under the same
+    # policy version. Only for guards whose check() is a pure function of the context: a guard
+    # that writes to ctx.state (pii) must leave it False.
+    cacheable: ClassVar[bool] = False
 
     def __init__(self, policy: Policy):
         self.policy = policy

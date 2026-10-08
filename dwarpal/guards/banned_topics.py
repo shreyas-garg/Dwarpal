@@ -79,6 +79,7 @@ def text_units(text: str) -> list[str]:
 @register("banned_topics")
 class BannedTopicsGuard(Guard):
     stages = frozenset({Stage.INPUT})
+    cacheable = True  # PR-06: pure function of the text, safe to reuse per version
 
     def __init__(self, policy):
         super().__init__(policy)

@@ -2,6 +2,7 @@
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -42,6 +43,11 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = 0
     daily_request_cap: int = 0
     trust_forwarded_for: bool = False
+
+    # PR-06: how each stage's guards are scheduled (dwarpal/pipeline.py, docs/tradeoffs.md),
+    # and how many guard decisions to keep for reuse on identical input. 0 = no cache.
+    pipeline_strategy: Literal["tiered", "sequential", "parallel"] = "tiered"
+    guard_cache_size: int = 2048
 
     @property
     def enabled_policy_names(self) -> set[str] | None:

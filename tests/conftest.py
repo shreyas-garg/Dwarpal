@@ -11,6 +11,7 @@ from dwarpal.app import create_app
 from dwarpal.config import Settings
 from dwarpal.guards.base import Action, Guard, GuardContext, GuardResult, Stage
 from dwarpal.guards.registry import register
+from dwarpal.llm import Completion, set_llm
 from dwarpal.testing.mock_upstream import MockState
 from dwarpal.testing.mock_upstream import app as mock_app
 
@@ -66,6 +67,41 @@ class CrashGuard(Guard):
 @pytest.fixture(autouse=True)
 def _reset_mock() -> None:
     MockState.reset()
+
+
+# PR-06: guards that call an LLM (faithfulness, output_schema repair) get this instead.
+
+
+class FakeLLM:
+    """Replies with the queued texts in order (the last one repeats); an Exception is raised.
+    Every call is recorded, so tests can check the prompt and parameters."""
+
+    def __init__(self, *replies: str | Exception, prompt_tokens=1000, completion_tokens=200):
+        self.replies = list(replies) or ["{}"]
+        self.calls: list[dict] = []
+        self.prompt_tokens = prompt_tokens
+        self.completion_tokens = completion_tokens
+
+    async def complete(self, messages, *, model=None, **params) -> Completion:
+        self.calls.append({"messages": messages, "model": model, **params})
+        reply = self.replies.pop(0) if len(self.replies) > 1 else self.replies[0]
+        if isinstance(reply, Exception):
+            raise reply
+        return Completion(reply, self.prompt_tokens, self.completion_tokens)
+
+
+@pytest.fixture
+def fake_llm() -> Iterator[Callable[..., FakeLLM]]:
+    """Install a FakeLLM for every guard LLM call. With make_client, call this after the
+    client is created: the app installs its own client at startup."""
+
+    def install(*replies: str | Exception, **kw) -> FakeLLM:
+        llm = FakeLLM(*replies, **kw)
+        set_llm(llm)
+        return llm
+
+    yield install
+    set_llm(None)
 
 
 @pytest.fixture
