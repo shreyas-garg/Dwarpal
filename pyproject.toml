@@ -14,6 +14,9 @@ dependencies = [
     # PR-06: output_schema validates replies against the client's JSON Schema. Small and pure
     # Python apart from one Rust wheel, so it lives in core rather than an extra.
     "jsonschema>=4.22",
+    # PR-07: Langfuse traces go over OpenTelemetry (dwarpal/telemetry/langfuse.py).
+    "opentelemetry-sdk>=1.30",
+    "opentelemetry-exporter-otlp-proto-http>=1.30",
 ]
 
 [project.optional-dependencies]
@@ -40,6 +43,10 @@ dev = [
     "ruff>=0.5",
     "openai>=1.40",
 ]
+# PR-07: groups, not extras, so the proxy's Docker image (--all-extras) and CI leave them out.
+# `make dashboard` and `make bench` add them on demand.
+dashboard = ["streamlit>=1.40"]
+loadtest = ["locust>=2.30", "psutil>=6.0"]
 
 [build-system]
 requires = ["hatchling"]
