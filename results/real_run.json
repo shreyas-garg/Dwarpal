@@ -1,0 +1,43 @@
+{
+  "generated_at": "2026-10-09T02:45:02+0530",
+  "proxy": {
+    "url": "http://localhost:8000",
+    "git_sha": "dev",
+    "policies": [
+      "banned_topics@1.0.0",
+      "faithfulness@1.0.0",
+      "jailbreak@1.1.1",
+      "max_length@1.0.0",
+      "output_schema@1.0.0",
+      "pii@1.0.1",
+      "prompt_injection@1.1.1",
+      "secrets@1.0.1",
+      "toxicity@1.1.0"
+    ]
+  },
+  "model": "gemini-3.5-flash-lite",
+  "requests": 50,
+  "blocked": 0,
+  "errors": [],
+  "stopped_early": null,
+  "latency_ms": {
+    "client": {
+      "p50": 1235.437,
+      "p99": 15199.538
+    },
+    "upstream": {
+      "p50": 1173.22,
+      "p99": 15057.653
+    },
+    "added": {
+      "p50": 62.722,
+      "p99": 140.756
+    }
+  },
+  "tokens_per_request": {
+    "input": 589.06,
+    "output": 24.48
+  },
+  "cost_per_request_usd": 0.00023791799999999989,
+  "cost_total_usd": 0.011895899999999994
+}

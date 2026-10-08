@@ -168,15 +168,27 @@ What the numbers say:
   the text, which it does for the FAQ's markdown. That is four classifier passes for a 2 KB
   document: about 0.9 s per guard alone and 1.9 s with both running. From 10 users they time
   out and every grounded request is refused.
-- **Cost per request: TBD**, pending the real Gemini run. Dwarpal's own cost is only its model
-  calls: $0 on a plain request, and about $0.0004–0.0005 per judged reply against real Gemini
+- **Cost per request: $0.000238** in the real run below, at list price (on average 589 input and
+  24 output tokens at $0.30 / $2.50 per 1M). Dwarpal's own cost is only its model calls: $0 on a
+  plain request, and about $0.0004–0.0005 per judged reply against real Gemini
   ([0007](0007-output-guards-and-pipeline.md)).
 
-**Real run: TBD.** `loadtest/real_run.py` (50 requests to Gemini through the proxy, no context)
-is built and tested against the mock. It has not run against Gemini yet: the key's prepaid
-credits were used up (402). It writes `results/real_run.md` with end-to-end latency and cost per
-request. Note also that `gemini-2.5-flash` answers new API keys with 404 ("no longer available
-to new users"), so `.env.example` now uses `gemini-3.5-flash-lite`.
+**Real run** (`loadtest/real_run.py`, [results/real_run.md](../../results/real_run.md)), on
+2026-10-09: 50 support questions from the dev and holdout sets. Each was sent with the demo's FAQ
+system prompt and no context, one after another, through a local proxy to `gemini-3.5-flash-lite`.
+
+| | p50 | p99 |
+|---|---:|---:|
+| End to end (client) | 1,235 ms | 15,200 ms |
+| Model call | 1,173 ms | 15,058 ms |
+| Added by Dwarpal | 63 ms | 141 ms |
+
+- **Cost:** $0.000238 per request, $0.0119 for the run.
+- **Outcome:** none blocked, no errors.
+- **Added latency** matches the load test (60 ms p50 at one user).
+- **The tail is Gemini's:** 3 of the 50 model calls took over 3 s, the slowest 15.1 s.
+- **Model default:** `gemini-2.5-flash` answers new API keys with 404 ("no longer available to new
+  users"), so `.env.example` uses `gemini-3.5-flash-lite`.
 
 **Checked end to end** with the Docker image (`docker run --env-file .env`, port 7860):
 
