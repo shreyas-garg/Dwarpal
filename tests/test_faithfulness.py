@@ -88,8 +88,8 @@ async def test_judge_call_and_cost(fake_llm):
     llm = fake_llm("```json\n" + verdict("SUPPORTED") + "\n```")  # fenced output still parses
     result = await check()
     (call,) = llm.calls
-    assert call["model"] == "gemini-2.5-flash"
-    assert call["temperature"] == 0 and call["reasoning_effort"] == "none"
+    assert call["model"] == "gemini-3.5-flash-lite"
+    assert call["temperature"] == 0 and call["reasoning_effort"] == "minimal"
     assert call["response_format"]["type"] == "json_schema"
     prompt = call["messages"][0]["content"]
     assert "[1] Pro costs ₹499/month." in prompt and "[2] Annual plans" in prompt

@@ -19,11 +19,11 @@ params:
   repair_once: true
   unwrap_fences: true
   llm:
-    model: gemini-2.5-flash
+    model: gemini-3.5-flash-lite
     temperature: 0
     max_tokens: 1024
     extra:
-      reasoning_effort: none
+      reasoning_effort: minimal
     # USD per 1M tokens, paid tier, ai.google.dev/gemini-api/docs/pricing, checked 2026-10-08.
     price_per_1m_tokens: {input: 0.30, output: 2.50}
 changelog:
