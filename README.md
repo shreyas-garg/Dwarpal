@@ -43,7 +43,7 @@ More detail: [docs/architecture.md](docs/architecture.md).
 | prompt_injection, jailbreak | input | `policies/prompt_injection.yaml`, `policies/jailbreak.yaml` | ✅ |
 | pii, secrets | input + output | `policies/pii.yaml`, `policies/secrets.yaml` | ✅ |
 | banned_topics, toxicity | input / output | `policies/banned_topics.yaml`, `policies/toxicity.yaml` | ✅ |
-| output_schema, faithfulness | output | PR-06 | ⏳ |
+| output_schema, faithfulness | output | `policies/output_schema.yaml`, `policies/faithfulness.yaml` | ✅ |
 
 ## Results
 
